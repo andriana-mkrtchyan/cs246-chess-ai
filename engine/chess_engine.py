@@ -43,24 +43,64 @@ class ChessEngine:
     def reset_to_endgame_position(self):
         """
         ENDGAME MODE SETUP.
-        Example: simple KQ vs K.
-        You can change this to any endgame FEN you want.
+        Generate a random low-material legal endgame position.
         """
-        self.board = chess.Board.empty()
-
-        # White: King + Queen (e.g., K on e1, Q on e3)
-        self.board.set_piece_at(chess.E1, chess.Piece(chess.KING, chess.WHITE))
-        self.board.set_piece_at(chess.E3, chess.Piece(chess.QUEEN, chess.WHITE))
-
-        # Black: King on e8
-        self.board.set_piece_at(chess.E8, chess.Piece(chess.KING, chess.BLACK))
-
-        self.board.turn = chess.WHITE
+        fen = ChessEngine.random_endgame_fen()
+        self.board = chess.Board(fen)
 
         self.move_history.clear()
         self.white_captures.clear()
         self.black_captures.clear()
         self._capture_history.clear()
+
+    @staticmethod
+    def random_endgame_fen(min_pieces=3, max_pieces=6):
+        """
+        Generate a random legal endgame FEN.
+
+        - always includes both kings
+        - total number of pieces is between min_pieces and max_pieces
+        - side to move is random
+        """
+        while True:
+            # start from an empty board
+            board = chess.Board(None)
+
+            # list of all squares, shuffled
+            squares = list(chess.SQUARES)
+            random.shuffle(squares)
+
+            # place white and black kings
+            wk = squares.pop()
+            bk = squares.pop()
+            board.set_piece_at(wk, chess.Piece(chess.KING, chess.WHITE))
+            board.set_piece_at(bk, chess.Piece(chess.KING, chess.BLACK))
+
+            # how many extra pieces to add
+            num_extra = random.randint(max(0, min_pieces - 2), max_pieces - 2)
+
+            piece_types = [
+                chess.PAWN, chess.KNIGHT, chess.BISHOP,
+                chess.ROOK, chess.QUEEN
+            ]
+            colors = [chess.WHITE, chess.BLACK]
+
+            for _ in range(num_extra):
+                if not squares:
+                    break
+                sq = squares.pop()
+                ptype = random.choice(piece_types)
+                color = random.choice(colors)
+                board.set_piece_at(sq, chess.Piece(ptype, color))
+
+            # make sure the position is legal (no illegal checks, etc.)
+            if not board.is_valid():
+                continue
+
+            # random side to move
+            board.turn = random.choice([chess.WHITE, chess.BLACK])
+
+            return board.fen()
 
     # --- helpers ------------------------------------------------------------
 
@@ -325,3 +365,6 @@ class ChessEngine:
             return None
 
         return from_row, from_col, to_row, to_col, san
+
+
+
