@@ -140,7 +140,7 @@ def evaluate_position(board: chess.Board):
             score -= val
 
         # PST bonus
-        score += pst_bonus(piece, sq) * (1 if piece.color == chess.WHITE else -1)
+        #score += pst_bonus(piece, sq) * (1 if piece.color == chess.WHITE else -1)
 
     # Mobility
     score += 0.1 * (mobility(board, chess.WHITE) - mobility(board, chess.BLACK))

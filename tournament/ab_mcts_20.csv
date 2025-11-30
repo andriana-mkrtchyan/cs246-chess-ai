@@ -1,0 +1,28 @@
+Game,WhiteAlgo,BlackAlgo,Result,Moves
+1,alphabeta,mcts,0,36
+2,alphabeta,mcts,0,27
+3,alphabeta,mcts,0,49
+4,alphabeta,mcts,0,39
+5,alphabeta,mcts,0,100
+6,alphabeta,mcts,0,0
+7,alphabeta,mcts,0,6
+8,alphabeta,mcts,1,97
+9,alphabeta,mcts,0,48
+10,alphabeta,mcts,1,19
+11,alphabeta,mcts,0,100
+12,alphabeta,mcts,0,100
+13,alphabeta,mcts,0,9
+14,alphabeta,mcts,0,54
+15,alphabeta,mcts,0,100
+16,alphabeta,mcts,1,24
+17,alphabeta,mcts,0,4
+18,alphabeta,mcts,0,100
+19,alphabeta,mcts,0,30
+20,alphabeta,mcts,0,100
+
+
+--- MATCH COMPLETE ---
+alphabeta (White) wins: 3
+mcts (Black) wins: 0
+Draws: 17
+Average game length: 52.1 moves

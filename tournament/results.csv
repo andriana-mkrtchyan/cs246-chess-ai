@@ -1,0 +1,11 @@
+Game,WhiteAlgo,BlackAlgo,Result,Moves
+1,alphabeta,minimax,1,25
+2,alphabeta,minimax,0,20
+3,alphabeta,minimax,0,200
+4,alphabeta,minimax,0,150
+5,alphabeta,minimax,0,150
+6,alphabeta,minimax,-1,29
+7,alphabeta,minimax,1,38
+8,alphabeta,minimax,0,21
+9,alphabeta,minimax,1,21
+10,alphabeta,minimax,0,134

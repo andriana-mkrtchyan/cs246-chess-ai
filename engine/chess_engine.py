@@ -321,8 +321,8 @@ class ChessEngine:
             - "alphabeta" -> minimax with alpha-beta + quiescence
             - "iddfs"     -> iterative deepening over alpha-beta
             - "mcts"      -> Monte Carlo Tree Search
-            - anything else -> random move fallback
-
+            - anything else,
+            - default -> "alphabeta"
         Returns (from_row, from_col, to_row, to_col, notation) or None.
         """
         if self.is_game_over():
@@ -337,27 +337,25 @@ class ChessEngine:
 
         # choose search algorithm
         if method == "minimax":
-            _, best_move = minimax(self.board, depth=3, maximizing=maximizing)
-        elif method == "alphabeta":
-            _, best_move = alpha_beta(
-                self.board,
-                depth=4,
-                alpha=-float("inf"),
-                beta=float("inf"),
-                maximizing=maximizing,
-            )
+            _, best_move = minimax(self.board, depth=5, maximizing=maximizing)
         elif method == "iddfs":
             best_move = iterative_deepening(
                 self.board,
-                max_depth=4,
+                max_depth=5,
             )
         elif method == "mcts":
             best_move = mcts(
                 self.board,
-                simulations=250,
+                simulations=300,
             )
         else:
-            best_move = random.choice(legal)
+            _, best_move = alpha_beta(
+                self.board,
+                depth=5,
+                alpha=-float("inf"),
+                beta=float("inf"),
+                maximizing=maximizing,
+            )
 
         if best_move is None:
             return None
