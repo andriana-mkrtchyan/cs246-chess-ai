@@ -1,70 +1,649 @@
 import tkinter as tk
 from tkinter import ttk
 
-from config.constants import (
-    BOARD_SIZE,
-    SQUARE_SIZE,
-    PIECE_SETS,
-    THEMES,
-)
-from engine.chess_engine import ChessEngine
+# --- CONFIG -----------------------------------------------------------------
 
+BOARD_SIZE = 8
+SQUARE_SIZE = 80
+
+ALGORITHMS = ["Minimax", "Alpha-Beta", "MCTS", "Random"]
+
+PIECE_SETS = {
+    "Unicode": {
+        "wK": "♔", "wQ": "♕", "wR": "♖", "wB": "♗", "wN": "♘", "wP": "♙",
+        "bK": "♚", "bQ": "♛", "bR": "♜", "bB": "♝", "bN": "♞", "bP": "♟",
+    },
+    "Letters": {
+        "wK": "K", "wQ": "Q", "wR": "R", "wB": "B", "wN": "N", "wP": "P",
+        "bK": "k", "bQ": "q", "bR": "r", "bB": "b", "bN": "n", "bP": "p",
+    },
+}
+
+PIECE_VALUES = {"P": 1, "N": 3, "B": 3, "R": 5, "Q": 9, "K": 0}
+
+THEMES = {
+    "Classic": {
+        "light": "#EEEED2",
+        "dark": "#769656",
+        "highlight": "#BACA44",
+        "selected": "#F6F669",
+        "last_move": "#F3E99F",
+    },
+    "Dark": {
+        "light": "#B0B0B0",
+        "dark": "#404040",
+        "highlight": "#6D8F1F",
+        "selected": "#D4D24C",
+        "last_move": "#595959",
+    },
+    "Ocean": {
+        "light": "#E6F4F1",
+        "dark": "#2F6F7E",
+        "highlight": "#4BA3C3",
+        "selected": "#8ED8F4",
+        "last_move": "#71BFD8",
+    },
+"Candy": {
+        "light": "#FFE4F9",
+        "dark": "#C475ED",
+        "highlight": "#F9A8D4",
+        "selected": "#FDE68A",
+        "last_move": "#FBCFE8",
+    },
+
+    # NEW: warm sunset theme (cream + red-brown)
+    "Sunset": {
+        "light": "#FDEBD0",   # soft cream
+        "dark":  "#C4563F",   # terracotta
+        "highlight": "#F5CBA7",
+        "selected": "#F9E79F",
+        "last_move": "#FAD7A0",
+    },
+
+    # NEW: galaxy theme (dark + neon blue)
+    "Galaxy": {
+        "light": "#2F3640",   # dark gray-blue
+        "dark":  "#192A56",   # deep navy
+        "highlight": "#00A8FF",
+        "selected": "#9C88FF",
+        "last_move": "#273C75",
+    },
+}
+
+
+
+
+# --- ENGINE STUB -----------------------------------------------------------
+
+
+class ChessEngineStub:
+    def __init__(self):
+        self.reset_to_start_position()
+
+    def reset_to_start_position(self):
+        self.board = [
+            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
+            ["bP"] * 8,
+            [""] * 8,
+            [""] * 8,
+            [""] * 8,
+            [""] * 8,
+            ["wP"] * 8,
+            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
+        ]
+        self.white_to_move = True
+        self.move_history = []
+        self.move_stack = []
+        self.white_captures = []
+        self.black_captures = []
+
+    def reset_to_endgame_position(self):
+        # Simple KQ vs K placeholder
+        self.board = [[""] * 8 for _ in range(8)]
+        self.board[7][4] = "wK"
+        self.board[5][4] = "wQ"
+        self.board[0][4] = "bK"
+
+        self.white_to_move = True
+        self.move_history = []
+        self.move_stack = []
+        self.white_captures = []
+        self.black_captures = []
+
+    def side_to_move(self):
+        return "w" if self.white_to_move else "b"
+
+    def get_board(self):
+        return self.board
+
+    def _in_bounds(self, r, c):
+        return 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE
+
+    def _color_of(self, piece):
+        return piece[0] if piece else None
+
+    def get_legal_moves_from(self, row, col):
+        board = self.board
+        piece = board[row][col]
+        if not piece:
+            return []
+
+        color = self._color_of(piece)
+        if color != self.side_to_move():
+            return []
+
+        ptype = piece[1]
+        moves = []
+
+        def add_ray(dr, dc):
+            r, c = row + dr, col + dc
+            while self._in_bounds(r, c):
+                target = board[r][c]
+                if not target:
+                    moves.append((r, c))
+                else:
+                    if self._color_of(target) != color:
+                        moves.append((r, c))
+                    break
+                r += dr
+                c += dc
+
+        if ptype == "P":
+            direction = -1 if color == "w" else 1
+            start_row = 6 if color == "w" else 1
+
+            r1 = row + direction
+            if self._in_bounds(r1, col) and board[r1][col] == "":
+                moves.append((r1, col))
+                r2 = row + 2 * direction
+                if row == start_row and self._in_bounds(r2, col) and board[r2][col] == "":
+                    moves.append((r2, col))
+
+            for dc in (-1, 1):
+                rc = row + direction
+                cc = col + dc
+                if self._in_bounds(rc, cc):
+                    target = board[rc][cc]
+                    if target and self._color_of(target) != color:
+                        moves.append((rc, cc))
+
+        elif ptype == "N":
+            for dr, dc in [
+                (-2, -1), (-2, 1), (-1, -2), (-1, 2),
+                (1, -2), (1, 2), (2, -1), (2, 1)
+            ]:
+                r, c = row + dr, col + dc
+                if self._in_bounds(r, c):
+                    target = board[r][c]
+                    if not target or self._color_of(target) != color:
+                        moves.append((r, c))
+
+        elif ptype == "B":
+            for dr, dc in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+                add_ray(dr, dc)
+
+        elif ptype == "R":
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                add_ray(dr, dc)
+
+        elif ptype == "Q":
+            for dr, dc in [
+                (-1, -1), (-1, 1), (1, -1), (1, 1),
+                (-1, 0), (1, 0), (0, -1), (0, 1)
+            ]:
+                add_ray(dr, dc)
+
+        elif ptype == "K":
+            for dr in (-1, 0, 1):
+                for dc in (-1, 0, 1):
+                    if dr == 0 and dc == 0:
+                        continue
+                    r, c = row + dr, col + dc
+                    if self._in_bounds(r, c):
+                        target = board[r][c]
+                        if not target or self._color_of(target) != color:
+                            moves.append((r, c))
+
+        return moves
+
+    def make_move(self, from_row, from_col, to_row, to_col):
+        piece = self.board[from_row][from_col]
+        captured = self.board[to_row][to_col]
+        color = piece[0]
+
+        self.move_stack.append(
+            (from_row, from_col, to_row, to_col, piece, captured, self.white_to_move)
+        )
+
+        if captured:
+            if color == "w":
+                self.white_captures.append(captured)
+            else:
+                self.black_captures.append(captured)
+
+        self.board[to_row][to_col] = piece
+        self.board[from_row][from_col] = ""
+        self.white_to_move = not self.white_to_move
+
+        move_notation = (
+            f"{piece}@{chr(from_col + ord('a'))}{BOARD_SIZE - from_row}"
+            f"-{chr(to_col + ord('a'))}{BOARD_SIZE - to_row}"
+        )
+        if captured:
+            move_notation += f" x{captured}"
+        self.move_history.append(move_notation)
+        return move_notation
+
+    def undo_last_move(self):
+        if not self.move_stack:
+            return None
+
+        fr, fc, tr, tc, piece, captured, prev_wtm = self.move_stack.pop()
+        self.board[fr][fc] = piece
+        self.board[tr][tc] = captured
+        self.white_to_move = prev_wtm
+
+        if captured:
+            if piece[0] == "w":
+                if self.white_captures:
+                    self.white_captures.pop()
+            else:
+                if self.black_captures:
+                    self.black_captures.pop()
+
+        undone = self.move_history.pop() if self.move_history else None
+        return undone
+
+    def get_status(self):
+        return "White to move" if self.white_to_move else "Black to move"
+
+    def get_captures(self):
+        return self.white_captures, self.black_captures
+
+    def get_material_balance(self):
+        score = 0
+        for r in range(BOARD_SIZE):
+            for c in range(BOARD_SIZE):
+                p = self.board[r][c]
+                if p:
+                    val = PIECE_VALUES.get(p[1], 0)
+                    score += val if p[0] == "w" else -val
+        return score
+
+    def find_best_move(self, config):
+        # search team will implement
+        return None
+
+
+# --- APP WITH START MENU ----------------------------------------------------
+
+
+class ChessApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Endgame Chess – AI Project")
+        self.root.geometry("1100x720")
+        self.root.minsize(1000, 680)
+
+        style = ttk.Style()
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
+        style.configure("Main.TFrame", background="#F5F5F5")
+
+        self.start_frame = None
+        self.game_gui = None
+
+        self._build_start_menu()
+
+    def _build_start_menu(self):
+        if self.game_gui:
+            self.game_gui.destroy()
+            self.game_gui = None
+
+        self.start_frame = ttk.Frame(self.root, style="Main.TFrame")
+        self.start_frame.pack(fill="both", expand=True, padx=40, pady=40)
+
+        # Header
+        title = ttk.Label(
+            self.start_frame,
+            text="Endgame Chess",
+            font=("Segoe UI", 26, "bold"),
+            background="#F5F5F5",
+        )
+        title.pack(pady=(0, 5))
+
+        subtitle = ttk.Label(
+            self.start_frame,
+            text="AI Group Project – Python UI/UX",
+            font=("Segoe UI", 12),
+            foreground="#555555",
+            background="#F5F5F5",
+        )
+        subtitle.pack(pady=(0, 20))
+
+        # Center card
+        center = ttk.Frame(self.start_frame, style="Main.TFrame")
+        center.pack(expand=True)
+
+        # --- General settings (time/theme/pieces) -------------------------
+        general = ttk.Frame(center, style="Main.TFrame")
+        general.pack(pady=10)
+
+        self.time_var = tk.StringVar(value="5")
+        time_row = ttk.Frame(general, style="Main.TFrame")
+        time_row.grid(row=0, column=0, sticky="w", pady=4)
+        ttk.Label(
+            time_row, text="Time per side (minutes):",
+            font=("Segoe UI", 11), background="#F5F5F5",
+        ).pack(side="left")
+        ttk.Spinbox(
+            time_row, from_=1, to=60,
+            textvariable=self.time_var, width=5,
+        ).pack(side="left", padx=(8, 0))
+
+        self.theme_var = tk.StringVar(value="Classic")
+        theme_row = ttk.Frame(general, style="Main.TFrame")
+        theme_row.grid(row=1, column=0, sticky="w", pady=4)
+        ttk.Label(
+            theme_row, text="Board theme:",
+            font=("Segoe UI", 11), background="#F5F5F5",
+        ).pack(side="left")
+        ttk.Combobox(
+            theme_row,
+            textvariable=self.theme_var,
+            values=list(THEMES.keys()),
+            state="readonly",
+            width=10,
+        ).pack(side="left", padx=(8, 0))
+
+        self.piece_set_var = tk.StringVar(value="Unicode")
+        piece_row = ttk.Frame(general, style="Main.TFrame")
+        piece_row.grid(row=2, column=0, sticky="w", pady=4)
+        ttk.Label(
+            piece_row, text="Piece style:",
+            font=("Segoe UI", 11), background="#F5F5F5",
+        ).pack(side="left")
+        ttk.Combobox(
+            piece_row,
+            textvariable=self.piece_set_var,
+            values=list(PIECE_SETS.keys()),
+            state="readonly",
+            width=10,
+        ).pack(side="left", padx=(8, 0))
+
+        # --- Game type ----------------------------------------------------
+        self.game_type_var = tk.StringVar(value="HvH")
+        ttk.Label(
+            center,
+            text="Game type",
+            font=("Segoe UI", 11, "bold"),
+            background="#F5F5F5",
+        ).pack(pady=(12, 4))
+        game_type_frame = ttk.Frame(center, style="Main.TFrame")
+        game_type_frame.pack()
+
+        for text, value in [
+            ("Human vs Human", "HvH"),
+            ("Human vs AI", "HvAI"),
+            ("AI vs AI", "AIvAI"),
+        ]:
+            ttk.Radiobutton(
+                game_type_frame,
+                text=text,
+                value=value,
+                variable=self.game_type_var,
+                command=self._on_game_type_change,
+            ).pack(anchor="w")
+
+        # --- Mode (classic / endgame) ------------------------------------
+        self.mode_var = tk.StringVar(value="classic")
+        ttk.Label(
+            center,
+            text="Mode",
+            font=("Segoe UI", 11, "bold"),
+            background="#F5F5F5",
+        ).pack(pady=(12, 4))
+        mode_frame = ttk.Frame(center, style="Main.TFrame")
+        mode_frame.pack()
+        self.classic_rb = ttk.Radiobutton(
+            mode_frame,
+            text="Classic chess (full board)",
+            value="classic",
+            variable=self.mode_var,
+        )
+        self.classic_rb.pack(anchor="w")
+        self.endgame_rb = ttk.Radiobutton(
+            mode_frame,
+            text="Endgame mode (custom positions)",
+            value="endgame",
+            variable=self.mode_var,
+        )
+        self.endgame_rb.pack(anchor="w")
+
+        # --- AI settings --------------------------------------------------
+        ttk.Label(
+            center,
+            text="AI settings",
+            font=("Segoe UI", 11, "bold"),
+            background="#F5F5F5",
+        ).pack(pady=(14, 4))
+        self.ai_settings_frame = ttk.Frame(center, style="Main.TFrame")
+        self.ai_settings_frame.pack()
+
+        # shared vars
+        self.ai1_algo_var = tk.StringVar(value=ALGORITHMS[1])
+        self.ai1_depth_var = tk.StringVar(value="3")
+        self.ai2_algo_var = tk.StringVar(value=ALGORITHMS[0])
+        self.ai2_depth_var = tk.StringVar(value="3")
+
+        # HvAI settings
+        self.hvai_frame = ttk.Frame(self.ai_settings_frame, style="Main.TFrame")
+        ttk.Label(
+            self.hvai_frame,
+            text="AI algorithm:",
+            font=("Segoe UI", 11),
+            background="#F5F5F5",
+        ).grid(row=0, column=0, sticky="w")
+        ttk.Combobox(
+            self.hvai_frame,
+            textvariable=self.ai1_algo_var,
+            values=ALGORITHMS,
+            state="readonly",
+            width=12,
+        ).grid(row=0, column=1, padx=(5, 15))
+        ttk.Label(
+            self.hvai_frame,
+            text="Depth:",
+            font=("Segoe UI", 11),
+            background="#F5F5F5",
+        ).grid(row=0, column=2, sticky="w")
+        ttk.Spinbox(
+            self.hvai_frame,
+            from_=1,
+            to=10,
+            textvariable=self.ai1_depth_var,
+            width=4,
+        ).grid(row=0, column=3, padx=(5, 0))
+
+        # AIvAI settings
+        self.ava_frame = ttk.Frame(self.ai_settings_frame, style="Main.TFrame")
+        ttk.Label(
+            self.ava_frame,
+            text="AI 1 (White):",
+            font=("Segoe UI", 11, "bold"),
+            background="#F5F5F5",
+        ).grid(row=0, column=0, sticky="w", pady=(0, 2))
+        ttk.Combobox(
+            self.ava_frame,
+            textvariable=self.ai1_algo_var,
+            values=ALGORITHMS,
+            state="readonly",
+            width=12,
+        ).grid(row=0, column=1, padx=(5, 15))
+        ttk.Label(
+            self.ava_frame,
+            text="Depth:",
+            font=("Segoe UI", 11),
+            background="#F5F5F5",
+        ).grid(row=0, column=2, sticky="w")
+        ttk.Spinbox(
+            self.ava_frame,
+            from_=1,
+            to=10,
+            textvariable=self.ai1_depth_var,
+            width=4,
+        ).grid(row=0, column=3, padx=(5, 0))
+
+        ttk.Label(
+            self.ava_frame,
+            text="AI 2 (Black):",
+            font=("Segoe UI", 11, "bold"),
+            background="#F5F5F5",
+        ).grid(row=1, column=0, sticky="w", pady=(8, 2))
+        ttk.Combobox(
+            self.ava_frame,
+            textvariable=self.ai2_algo_var,
+            values=ALGORITHMS,
+            state="readonly",
+            width=12,
+        ).grid(row=1, column=1, padx=(5, 15))
+        ttk.Label(
+            self.ava_frame,
+            text="Depth:",
+            font=("Segoe UI", 11),
+            background="#F5F5F5",
+        ).grid(row=1, column=2, sticky="w")
+        ttk.Spinbox(
+            self.ava_frame,
+            from_=1,
+            to=10,
+            textvariable=self.ai2_depth_var,
+            width=4,
+        ).grid(row=1, column=3, padx=(5, 0))
+
+        # initial state
+        self._on_game_type_change()
+
+        # Play button
+        play_btn = ttk.Button(
+            center,
+            text="PLAY",
+            command=self._start_game_from_menu,
+            width=20,
+        )
+        play_btn.pack(pady=18)
+
+        # Info
+        info = ttk.Label(
+            self.start_frame,
+            text="AI behaviour (search, automatic AI vs AI, etc.)\n"
+                 "will be implemented by the search/engine team.\n"
+                 "This screen only configures UI + parameters.",
+            font=("Segoe UI", 9),
+            foreground="#777777",
+            background="#F5F5F5",
+            justify="center",
+        )
+        info.pack(pady=(5, 0))
+
+    def _on_game_type_change(self):
+        gt = self.game_type_var.get()
+
+        # clear AI settings frame
+        for child in self.ai_settings_frame.winfo_children():
+            child.pack_forget()
+            child.grid_forget()
+
+        if gt == "HvH":
+            # no AI settings
+            self.classic_rb.configure(state="normal")
+            self.endgame_rb.configure(state="normal")
+        elif gt == "HvAI":
+            self.hvai_frame.pack(anchor="w")
+            self.classic_rb.configure(state="normal")
+            self.endgame_rb.configure(state="normal")
+        elif gt == "AIvAI":
+            self.ava_frame.pack(anchor="w")
+            self.mode_var.set("endgame")
+            self.classic_rb.configure(state="disabled")
+            self.endgame_rb.configure(state="normal")
+
+    def _start_game_from_menu(self):
+        try:
+            minutes = int(self.time_var.get())
+            if minutes <= 0:
+                minutes = 5
+        except ValueError:
+            minutes = 5
+
+        theme = self.theme_var.get()
+        if theme not in THEMES:
+            theme = "Classic"
+
+        piece_set_name = self.piece_set_var.get()
+        if piece_set_name not in PIECE_SETS:
+            piece_set_name = "Unicode"
+
+        game_type = self.game_type_var.get()
+        mode = self.mode_var.get()
+
+        config = {
+            "game_type": game_type,
+            "mode": mode,
+            "minutes": minutes,
+            "theme": theme,
+            "piece_set": piece_set_name,
+            "ai1_algo": self.ai1_algo_var.get(),
+            "ai1_depth": int(self.ai1_depth_var.get() or 1),
+            "ai2_algo": self.ai2_algo_var.get(),
+            "ai2_depth": int(self.ai2_depth_var.get() or 1),
+            "ai_side": "b",
+        }
+
+        if self.start_frame:
+            self.start_frame.destroy()
+            self.start_frame = None
+
+        self.game_gui = ChessGUI(self.root, config, back_to_menu_callback=self._build_start_menu)
+
+
+# --- GAME UI (unchanged from previous fancy version) -----------------------
 
 class ChessGUI:
-    """
-    Game UI:
-      - Draws the board with themes & piece styles
-      - Handles clicks, legal-move highlighting and last-move highlight
-      - Shows timers, material balance, captured pieces and move log
-      - Supports Classic vs Endgame mode
-      - Uses ChessEngine for all rules, check, mate, stalemate, etc.
-    """
-
-    def __init__(
-        self,
-        root,
-        initial_minutes: int,
-        initial_theme: str,
-        piece_set_name: str,
-        mode: str,
-        back_to_menu_callback,
-    ):
+    def __init__(self, root, config, back_to_menu_callback):
         self.root = root
-        self.mode = mode
+        self.config = config
         self.back_to_menu_callback = back_to_menu_callback
 
-        # --- engine & position ---------------------------------------------
-        self.engine = ChessEngine()
-        if mode == "endgame":
+        self.engine = ChessEngineStub()
+        if config["mode"] == "endgame":
             self.engine.reset_to_endgame_position()
         else:
             self.engine.reset_to_start_position()
 
-        # --- UI state -------------------------------------------------------
-        self.theme_name = tk.StringVar(value=initial_theme)
-        self.piece_set_name = tk.StringVar(value=piece_set_name)
+        self.theme_name = tk.StringVar(value=config["theme"])
+        self.piece_set_name = tk.StringVar(value=config["piece_set"])
         self.piece_symbols = PIECE_SETS[self.piece_set_name.get()]
 
-        self.selected_square = None      # (row, col) or None
-        self.legal_moves = []            # list of (row, col)
-        self.last_move = None            # ((from_row, from_col), (to_row, to_col))
-        self.square_size = SQUARE_SIZE   # will be updated based on window size
+        self.selected_square = None
+        self.legal_moves = []
+        self.last_move = None
 
-        # --- clocks ---------------------------------------------------------
-        self.initial_minutes = initial_minutes
-        self.white_time = initial_minutes * 60
-        self.black_time = initial_minutes * 60
+        self.initial_minutes = config["minutes"]
+        self.white_time = self.initial_minutes * 60
+        self.black_time = self.initial_minutes * 60
         self.white_clock_var = tk.StringVar()
         self.black_clock_var = tk.StringVar()
         self.timer_running = True
 
-        # --- status / material / captures ----------------------------------
         self.status_var = tk.StringVar(value=self.engine.get_status())
         self.material_var = tk.StringVar()
         self.white_caps_var = tk.StringVar()
         self.black_caps_var = tk.StringVar()
+        self.mode_info_var = tk.StringVar()
 
-        # --- layout root frame ----------------------------------------------
         self.main_frame = ttk.Frame(self.root, style="Main.TFrame")
         self.main_frame.pack(fill="both", expand=True, padx=15, pady=15)
 
@@ -73,144 +652,74 @@ class ChessGUI:
         self._draw_board()
         self._update_clocks()
         self._update_material_and_captures()
+        self._update_mode_label()
 
-        # start ticking the timer
         self.root.after(1000, self._tick)
 
     def destroy(self):
         self.main_frame.destroy()
 
-    # ======================================================================
-    # STYLE & LAYOUT
-    # ======================================================================
-
     def _setup_style(self):
         style = ttk.Style()
         style.configure("Side.TFrame", background="#F5F5F5")
-        style.configure(
-            "Title.TLabel",
-            font=("Segoe UI", 18, "bold"),
-            background="#F5F5F5",
-        )
-        style.configure(
-            "Subtitle.TLabel",
-            font=("Segoe UI", 10),
-            foreground="#555555",
-            background="#F5F5F5",
-        )
-        style.configure(
-            "Section.TLabel",
-            font=("Segoe UI", 11, "bold"),
-            background="#F5F5F5",
-        )
-        style.configure(
-            "Status.TLabel",
-            font=("Segoe UI", 12),
-            background="#F5F5F5",
-        )
-
-        # Highlight styles for whose turn it is
-        style.configure(
-            "PlayerOn.TLabel",
-            font=("Segoe UI", 11, "bold"),
-            foreground="#1E88E5",
-            background="#F5F5F5",
-        )
-        style.configure(
-            "PlayerOff.TLabel",
-            font=("Segoe UI", 11),
-            foreground="#777777",
-            background="#F5F5F5",
-        )
+        style.configure("Title.TLabel", font=("Segoe UI", 18, "bold"), background="#F5F5F5")
+        style.configure("Subtitle.TLabel", font=("Segoe UI", 10), foreground="#555555", background="#F5F5F5")
+        style.configure("Section.TLabel", font=("Segoe UI", 11, "bold"), background="#F5F5F5")
+        style.configure("Status.TLabel", font=("Segoe UI", 12), background="#F5F5F5")
 
     def _build_layout(self):
         self.main_frame.columnconfigure(0, weight=1)
         self.main_frame.columnconfigure(1, weight=0)
         self.main_frame.rowconfigure(1, weight=1)
 
-        # ---- header --------------------------------------------------------
         header = ttk.Frame(self.main_frame, style="Main.TFrame")
         header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
 
-        title_text = (
-            "Endgame Chess – Classic Mode"
-            if self.mode == "classic"
-            else "Endgame Chess – Endgame Mode"
-        )
-        ttk.Label(header, text=title_text, style="Title.TLabel").pack(side="left")
+        mode_text = "Classic Mode" if self.config["mode"] == "classic" else "Endgame Mode"
+        ttk.Label(header, text=f"Endgame Chess – {mode_text}", style="Title.TLabel").pack(side="left")
+        ttk.Button(header, text="Back to menu", command=self._back_to_menu).pack(side="right")
 
-        ttk.Button(
-            header,
-            text="Back to menu",
-            command=self._back_to_menu,
-        ).pack(side="right")
-
-        # ---- board frame ---------------------------------------------------
         board_frame = ttk.Frame(self.main_frame, style="Main.TFrame")
         board_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 15))
 
         canvas_size = SQUARE_SIZE * BOARD_SIZE + 40
         self.canvas = tk.Canvas(
-            board_frame,
-            width=canvas_size,
-            height=canvas_size,
-            highlightthickness=0,
-            bg="#F5F5F5",
+            board_frame, width=canvas_size, height=canvas_size,
+            highlightthickness=0, bg="#F5F5F5",
         )
         self.canvas.pack(fill="both", expand=True)
-        self.canvas.bind("<Configure>", lambda e: self._draw_board())
         self.canvas.bind("<Button-1>", self.on_canvas_click)
 
-        # ---- side panel ----------------------------------------------------
         side_frame = ttk.Frame(self.main_frame, style="Side.TFrame")
         side_frame.grid(row=1, column=1, sticky="ns")
 
-        # clocks (player labels + time labels)
+        ttk.Label(side_frame, textvariable=self.mode_info_var, style="Subtitle.TLabel").pack(anchor="w", pady=(0, 8))
+
         clock_frame = ttk.Frame(side_frame, style="Side.TFrame")
         clock_frame.pack(fill="x", pady=(0, 8))
         clock_frame.columnconfigure(0, weight=1)
         clock_frame.columnconfigure(1, weight=1)
 
-        self.black_player_label = ttk.Label(
-            clock_frame, text="Black", style="PlayerOff.TLabel"
-        )
-        self.black_player_label.grid(row=0, column=0, sticky="w")
-
-        self.white_player_label = ttk.Label(
-            clock_frame, text="White", style="PlayerOn.TLabel"
-        )
-        self.white_player_label.grid(row=1, column=0, sticky="w")
-
-        # NEW: visible clock values
-        black_time_label = ttk.Label(
-            clock_frame,
-            textvariable=self.black_clock_var,
-            style="Subtitle.TLabel",
-        )
-        black_time_label.grid(row=0, column=1, sticky="e")
-
-        white_time_label = ttk.Label(
-            clock_frame,
-            textvariable=self.white_clock_var,
-            style="Subtitle.TLabel",
-        )
-        white_time_label.grid(row=1, column=1, sticky="e")
-
-        # status text (check/checkmate/etc.)
+        ttk.Label(clock_frame, text="Black", style="Section.TLabel").grid(row=0, column=0, sticky="w")
         ttk.Label(
-            side_frame, textvariable=self.status_var, style="Status.TLabel"
-        ).pack(anchor="w", pady=(0, 8))
+            clock_frame, textvariable=self.black_clock_var,
+            font=("Segoe UI", 12, "bold"), background="#F5F5F5",
+        ).grid(row=0, column=1, sticky="e")
 
-        # theme & piece style selector (in-game)
+        ttk.Label(clock_frame, text="White", style="Section.TLabel").grid(row=1, column=0, sticky="w")
+        ttk.Label(
+            clock_frame, textvariable=self.white_clock_var,
+            font=("Segoe UI", 12, "bold"), background="#F5F5F5",
+        ).grid(row=1, column=1, sticky="e")
+
+        ttk.Label(side_frame, textvariable=self.status_var, style="Status.TLabel").pack(anchor="w", pady=(0, 8))
+
         theme_row = ttk.Frame(side_frame, style="Side.TFrame")
         theme_row.pack(fill="x", pady=(0, 5))
         ttk.Label(theme_row, text="Theme:", style="Section.TLabel").pack(side="left")
         theme_cb = ttk.Combobox(
-            theme_row,
-            textvariable=self.theme_name,
-            values=list(THEMES.keys()),
-            state="readonly",
-            width=10,
+            theme_row, textvariable=self.theme_name,
+            values=list(THEMES.keys()), state="readonly", width=10,
         )
         theme_cb.pack(side="left", padx=(5, 0))
         theme_cb.bind("<<ComboboxSelected>>", lambda e: self._draw_board())
@@ -219,77 +728,58 @@ class ChessGUI:
         pieces_row.pack(fill="x", pady=(0, 10))
         ttk.Label(pieces_row, text="Pieces:", style="Section.TLabel").pack(side="left")
         pieces_cb = ttk.Combobox(
-            pieces_row,
-            textvariable=self.piece_set_name,
-            values=list(PIECE_SETS.keys()),
-            state="readonly",
-            width=10,
+            pieces_row, textvariable=self.piece_set_name,
+            values=list(PIECE_SETS.keys()), state="readonly", width=10,
         )
         pieces_cb.pack(side="left", padx=(5, 0))
         pieces_cb.bind("<<ComboboxSelected>>", self._on_piece_set_change)
 
-        # material & captures
-        ttk.Label(
-            side_frame, textvariable=self.material_var, style="Section.TLabel"
-        ).pack(anchor="w", pady=(0, 4))
+        ttk.Label(side_frame, textvariable=self.material_var, style="Section.TLabel").pack(anchor="w", pady=(0, 4))
 
         cap_frame = ttk.Frame(side_frame, style="Side.TFrame")
         cap_frame.pack(fill="x", pady=(0, 10))
         cap_frame.columnconfigure(1, weight=1)
 
-        ttk.Label(
-            cap_frame, text="White captured:", style="Subtitle.TLabel"
-        ).grid(row=0, column=0, sticky="w")
-        self.white_caps_label = tk.Label(
-            cap_frame,
-            textvariable=self.white_caps_var,
-            font=("Segoe UI Symbol", 14),
-            bg="#F5F5F5",
-        )
-        self.white_caps_label.grid(row=0, column=1, sticky="w")
+        ttk.Label(cap_frame, text="White captured:", style="Subtitle.TLabel").grid(row=0, column=0, sticky="w")
+        tk.Label(
+            cap_frame, textvariable=self.white_caps_var,
+            font=("Segoe UI Symbol", 14), bg="#F5F5F5",
+        ).grid(row=0, column=1, sticky="w")
 
-        ttk.Label(
-            cap_frame, text="Black captured:", style="Subtitle.TLabel"
-        ).grid(row=1, column=0, sticky="w")
-        self.black_caps_label = tk.Label(
-            cap_frame,
-            textvariable=self.black_caps_var,
-            font=("Segoe UI Symbol", 14),
-            bg="#F5F5F5",
-        )
-        self.black_caps_label.grid(row=1, column=1, sticky="w")
+        ttk.Label(cap_frame, text="Black captured:", style="Subtitle.TLabel").grid(row=1, column=0, sticky="w")
+        tk.Label(
+            cap_frame, textvariable=self.black_caps_var,
+            font=("Segoe UI Symbol", 14), bg="#F5F5F5",
+        ).grid(row=1, column=1, sticky="w")
 
-        # buttons
         btn_frame = ttk.Frame(side_frame, style="Side.TFrame")
         btn_frame.pack(fill="x", pady=(0, 10))
+        ttk.Button(btn_frame, text="New Game", command=self.on_new_game).pack(side="left", padx=(0, 5))
+        ttk.Button(btn_frame, text="AI Move", command=self.on_ai_move).pack(side="left")
+        ttk.Button(btn_frame, text="Undo", command=self.on_undo).pack(side="left", padx=(5, 0))
 
-        ttk.Button(btn_frame, text="New Game", command=self.on_new_game).pack(
-            side="left", padx=(0, 5)
-        )
-        ttk.Button(btn_frame, text="AI Move", command=self.on_ai_move).pack(
-            side="left"
-        )
-        ttk.Button(btn_frame, text="Undo", command=self.on_undo).pack(
-            side="left", padx=(5, 0)
-        )
-
-        # move log
-        ttk.Label(
-            side_frame, text="Move history", style="Section.TLabel"
-        ).pack(anchor="w", pady=(10, 2))
-
+        ttk.Label(side_frame, text="Move history", style="Section.TLabel").pack(anchor="w", pady=(10, 2))
         self.move_log = tk.Listbox(
-            side_frame,
-            height=22,
-            width=32,
-            font=("Consolas", 10),
-            activestyle="none",
+            side_frame, height=22, width=32,
+            font=("Consolas", 10), activestyle="none",
         )
         self.move_log.pack(fill="both", expand=True)
 
-    # ======================================================================
-    # CLOCKS & MATERIAL
-    # ======================================================================
+    def _update_mode_label(self):
+        gt = self.config["game_type"]
+        mode = self.config["mode"]
+        if gt == "HvH":
+            text = f"Human vs Human • {mode.capitalize()} chess"
+        elif gt == "HvAI":
+            text = (f"Human vs AI • {mode.capitalize()} chess • "
+                    f"AI: {self.config['ai1_algo']} (depth {self.config['ai1_depth']})")
+        else:
+            text = (f"AI vs AI • Endgame • "
+                    f"AI1: {self.config['ai1_algo']} (d{self.config['ai1_depth']}), "
+                    f"AI2: {self.config['ai2_algo']} (d{self.config['ai2_depth']})")
+        self.mode_info_var.set(text)
+
+    # --- clocks & material --------------------------------------------------
 
     def _format_time(self, seconds: int) -> str:
         m = seconds // 60
@@ -302,7 +792,6 @@ class ChessGUI:
 
     def _tick(self):
         if self.timer_running:
-            # decrease time for the side to move
             if self.engine.side_to_move() == "w":
                 if self.white_time > 0:
                     self.white_time -= 1
@@ -310,31 +799,14 @@ class ChessGUI:
                 if self.black_time > 0:
                     self.black_time -= 1
 
-            # time over?
             if self.white_time == 0 or self.black_time == 0:
                 self.timer_running = False
-
-                # White out of time
                 if self.white_time == 0 and self.black_time > 0:
-                    if self.engine.has_mating_material("b"):
-                        self.status_var.set("White flagged • Black wins on time")
-                    else:
-                        self.status_var.set(
-                            "Draw • White flagged but Black has insufficient material"
-                        )
-
-                # Black out of time
+                    self.status_var.set("White flagged • Black wins on time")
                 elif self.black_time == 0 and self.white_time > 0:
-                    if self.engine.has_mating_material("w"):
-                        self.status_var.set("Black flagged • White wins on time")
-                    else:
-                        self.status_var.set(
-                            "Draw • Black flagged but White has insufficient material"
-                        )
-
-                # both flags down
+                    self.status_var.set("Black flagged • White wins on time")
                 else:
-                    self.status_var.set("Draw • Both sides out of time")
+                    self.status_var.set("Both out of time")
 
             self._update_clocks()
 
@@ -357,106 +829,43 @@ class ChessGUI:
             "".join(self.piece_symbols.get(p, "?") for p in black_caps)
         )
 
-    # ======================================================================
-    # DRAWING
-    # ======================================================================
+    # --- drawing ------------------------------------------------------------
 
     def _current_colors(self):
-        theme = self.theme_name.get()
-        t = THEMES.get(theme, THEMES["Classic"])
-        return (
-            t["light"],
-            t["dark"],
-            t["highlight"],
-            t["selected"],
-            t["last_move"],
-        )
+        t = THEMES[self.theme_name.get()]
+        return (t["light"], t["dark"], t["highlight"], t["selected"], t["last_move"])
 
     def _draw_board(self):
         self.canvas.delete("all")
         board = self.engine.get_board()
         light, dark, highlight, selected_color, last_move_color = self._current_colors()
+        offset = 20
 
-        # dynamic sizing & centering
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
-
-        if canvas_width <= 1 or canvas_height <= 1:
-            canvas_width = SQUARE_SIZE * BOARD_SIZE + 80
-            canvas_height = SQUARE_SIZE * BOARD_SIZE + 80
-
-        max_board = min(canvas_width, canvas_height) - 60
-        max_board = max(max_board, 8 * 40)
-
-        self.square_size = max_board // BOARD_SIZE
-        board_pix = self.square_size * BOARD_SIZE
-
-        offset_x = (canvas_width - board_pix) // 2
-        offset_y = (canvas_height - board_pix) // 2
-        label_margin = 18
-
-        # king in check?
-        in_check_rc = None
-        try:
-            if self.engine.board.is_check():
-                king_sq = self.engine.board.king(self.engine.board.turn)
-                if king_sq is not None:
-                    in_check_rc = self.engine._square_to_rc(king_sq)
-        except Exception:
-            in_check_rc = None
-
-        # outer border
-        self.canvas.create_rectangle(
-            offset_x - 2,
-            offset_y - 2,
-            offset_x + board_pix + 2,
-            offset_y + board_pix + 2,
-            outline="#333333",
-            width=2,
-        )
-
-        # squares & pieces
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
-                x1 = offset_x + col * self.square_size
-                y1 = offset_y + row * self.square_size
-                x2 = x1 + self.square_size
-                y2 = y1 + self.square_size
+                x1 = offset + col * SQUARE_SIZE
+                y1 = offset + row * SQUARE_SIZE
+                x2 = x1 + SQUARE_SIZE
+                y2 = y1 + SQUARE_SIZE
 
                 color = light if (row + col) % 2 == 0 else dark
 
-                # last move highlight
                 if self.last_move:
                     (fr, fc), (tr, tc) = self.last_move
                     if (row, col) in [(fr, fc), (tr, tc)]:
                         color = last_move_color
 
-                # selected / legal moves
                 if self.selected_square == (row, col):
                     color = selected_color
                 elif (row, col) in self.legal_moves:
                     color = highlight
 
-                # king in check – highest priority
-                if in_check_rc is not None and (row, col) == in_check_rc:
-                    color = "#FF6B6B"
-
-                self.canvas.create_rectangle(
-                    x1,
-                    y1,
-                    x2,
-                    y2,
-                    fill=color,
-                    outline="",
-                )
+                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
 
                 piece = board[row][col]
                 if piece:
                     symbol = self.piece_symbols.get(piece, "?")
-                    base_factor = (
-                        0.6 if self.piece_set_name.get() == "Unicode" else 0.5
-                    )
-                    font_size = max(18, int(self.square_size * base_factor))
+                    font_size = 40 if self.piece_set_name.get() == "Unicode" else 30
                     self.canvas.create_text(
                         (x1 + x2) // 2,
                         (y1 + y2) // 2,
@@ -464,76 +873,50 @@ class ChessGUI:
                         font=("Segoe UI Symbol", font_size),
                     )
 
-        # coordinate labels (files & ranks)
         files = "abcdefgh"
         for col in range(BOARD_SIZE):
             file_char = files[col]
-            x = offset_x + col * self.square_size + self.square_size / 2
+            x = offset + col * SQUARE_SIZE + SQUARE_SIZE / 2
             self.canvas.create_text(
-                x,
-                offset_y + board_pix + label_margin,
-                text=file_char,
-                font=("Segoe UI", 10),
-                fill="#555555",
+                x, offset + BOARD_SIZE * SQUARE_SIZE + 12,
+                text=file_char, font=("Segoe UI", 10), fill="#555555",
             )
             self.canvas.create_text(
-                x,
-                offset_y - label_margin,
-                text=file_char,
-                font=("Segoe UI", 10),
-                fill="#555555",
+                x, offset - 10,
+                text=file_char, font=("Segoe UI", 10), fill="#555555",
             )
 
         for row in range(BOARD_SIZE):
             rank = str(BOARD_SIZE - row)
-            y = offset_y + row * self.square_size + self.square_size / 2
+            y = offset + row * SQUARE_SIZE + SQUARE_SIZE / 2
             self.canvas.create_text(
-                offset_x - label_margin,
-                y,
-                text=rank,
-                font=("Segoe UI", 10),
-                fill="#555555",
+                offset - 10, y,
+                text=rank, font=("Segoe UI", 10), fill="#555555",
             )
             self.canvas.create_text(
-                offset_x + board_pix + label_margin,
-                y,
-                text=rank,
-                font=("Segoe UI", 10),
-                fill="#555555",
+                offset + BOARD_SIZE * SQUARE_SIZE + 10, y,
+                text=rank, font=("Segoe UI", 10), fill="#555555",
             )
 
-        # status & material
         self.status_var.set(self.engine.get_status())
         self._update_material_and_captures()
 
-        # whose turn highlight
-        self._update_turn_highlight()
-
-        if self.engine.is_game_over():
-            self.timer_running = False
-
-    # ======================================================================
-    # INPUT HANDLING
-    # ======================================================================
+    # --- events -------------------------------------------------------------
 
     def _coords_from_event(self, event):
-        """Convert a canvas click to (row, col) with centering."""
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
-
-        board_pix = self.square_size * BOARD_SIZE
-        offset_x = (canvas_width - board_pix) // 2
-        offset_y = (canvas_height - board_pix) // 2
-
-        col = (event.x - offset_x) // self.square_size
-        row = (event.y - offset_y) // self.square_size
-
+        offset = 20
+        col = (event.x - offset) // SQUARE_SIZE
+        row = (event.y - offset) // SQUARE_SIZE
         if 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE:
-            return int(row), int(col)
+            return row, col
         return None
 
     def on_canvas_click(self, event):
-        if self.engine.is_game_over():
+        """Handle board clicks depending on game type (HvH / HvAI / AIvAI)."""
+
+        # 1) AI vs AI -> board is only for viewing
+        if self.config["game_type"] == "AIvAI":
+            self.status_var.set("AI vs AI mode: board is automatic (no human moves).")
             return
 
         square = self._coords_from_event(event)
@@ -544,8 +927,20 @@ class ChessGUI:
         board = self.engine.get_board()
         piece = board[row][col]
 
+        # 2) Human vs AI -> allow clicks ONLY when it's the human's turn
+        # By default in our config: human = White, AI = Black
+        if self.config["game_type"] == "HvAI":
+            ai_side = self.config.get("ai_side", "b")
+            human_side = "w" if ai_side == "b" else "b"
+
+            if self.engine.side_to_move() != human_side:
+                # it's AI's turn, user shouldn't move
+                self.status_var.set("It's AI's turn – AI will move automatically.")
+                return
+
+        # 3) Normal selection / move logic
         if self.selected_square is None:
-            # first click – pick up own piece
+            # select only current side-to-move piece
             if piece and piece[0] == self.engine.side_to_move():
                 self.selected_square = (row, col)
                 self.legal_moves = self.engine.get_legal_moves_from(row, col)
@@ -553,20 +948,23 @@ class ChessGUI:
                 self.selected_square = None
                 self.legal_moves = []
         else:
-            # second click – move / reselect / cancel
             if (row, col) == self.selected_square:
+                # deselect
                 self.selected_square = None
                 self.legal_moves = []
             elif (row, col) in self.legal_moves:
                 from_row, from_col = self.selected_square
                 to_row, to_col = row, col
                 notation = self.engine.make_move(from_row, from_col, to_row, to_col)
-                if notation is not None:
-                    self.last_move = ((from_row, from_col), (to_row, to_col))
-                    self._append_move_to_log(notation)
+                self.last_move = ((from_row, from_col), (to_row, to_col))
+                self._append_move_to_log(notation)
                 self.selected_square = None
                 self.legal_moves = []
+
+                # NEW: if this is HvAI and now it's AI's turn, auto-call AI move
+                self._maybe_trigger_ai_after_human_move()
             else:
+                # maybe selecting another piece of the same side
                 if piece and piece[0] == self.engine.side_to_move():
                     self.selected_square = (row, col)
                     self.legal_moves = self.engine.get_legal_moves_from(row, col)
@@ -576,17 +974,14 @@ class ChessGUI:
 
         self._draw_board()
 
-    def _append_move_to_log(self, notation: str):
+
+    def _append_move_to_log(self, notation):
         move_index = len(self.engine.move_history)
         self.move_log.insert("end", f"{move_index}. {notation}")
         self.move_log.see("end")
 
-    # ======================================================================
-    # BUTTON HANDLERS
-    # ======================================================================
-
     def on_new_game(self):
-        if self.mode == "classic":
+        if self.config["mode"] == "classic":
             self.engine.reset_to_start_position()
         else:
             self.engine.reset_to_endgame_position()
@@ -611,30 +1006,38 @@ class ChessGUI:
         if last_index >= 0:
             self.move_log.delete(last_index)
 
-        self.last_move = None
+        if self.engine.move_stack:
+            fr, fc, tr, tc, piece, cap, prev = self.engine.move_stack[-1]
+            self.last_move = ((fr, fc), (tr, tc))
+        else:
+            self.last_move = None
+
         self.selected_square = None
         self.legal_moves = []
-        self.timer_running = not self.engine.is_game_over()
         self._draw_board()
 
     def on_ai_move(self):
-        """
-        Simple AI button – calls ChessEngine.find_best_move()
-        (which your teammates can replace with minimax/alpha-beta/MCTS).
-        """
-        if self.engine.is_game_over():
-            self.status_var.set("Game over – no legal moves.")
+        gt = self.config["game_type"]
+        if gt == "HvH":
+            self.status_var.set("No AI here – this is Human vs Human.")
+            return
+        if gt == "AIvAI":
+            self.status_var.set(
+                "AI vs AI automatic play will be implemented by the engine team."
+            )
             return
 
-        move = self.engine.find_best_move()
-        if move is None:
-            self.status_var.set("AI has no move (game over or error).")
+        ai_side = self.config.get("ai_side", "b")
+        if (ai_side == "w" and self.engine.side_to_move() != "w") or (
+            ai_side == "b" and self.engine.side_to_move() != "b"
+        ):
+            self.status_var.set("It's the human's turn, not AI.")
             return
 
-        from_row, from_col, to_row, to_col, notation = move
-        self.last_move = ((from_row, from_col), (to_row, to_col))
-        self._append_move_to_log(notation)
-        self._draw_board()
+        self.status_var.set(
+            f"AI move not implemented yet "
+            f"({self.config['ai1_algo']} depth {self.config['ai1_depth']})"
+        )
 
     def _on_piece_set_change(self, event=None):
         name = self.piece_set_name.get()
@@ -649,11 +1052,20 @@ class ChessGUI:
         self.main_frame.destroy()
         self.back_to_menu_callback()
 
-    def _update_turn_highlight(self):
-        """Visually highlight which side is to move."""
-        if self.engine.side_to_move() == "w":
-            self.white_player_label.configure(style="PlayerOn.TLabel")
-            self.black_player_label.configure(style="PlayerOff.TLabel")
-        else:
-            self.white_player_label.configure(style="PlayerOff.TLabel")
-            self.black_player_label.configure(style="PlayerOn.TLabel")
+    def _maybe_trigger_ai_after_human_move(self):
+        """If this is Human vs AI and it's now AI's turn, call on_ai_move automatically."""
+        if self.config["game_type"] != "HvAI":
+            return
+
+        ai_side = self.config.get("ai_side", "b")  # default: AI = Black
+        if self.engine.side_to_move() == ai_side:
+            # tiny delay so UI updates first
+            self.root.after(300, self.on_ai_move)
+
+# --- RUN --------------------------------------------------------------------
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ChessApp(root)
+    root.mainloop()
