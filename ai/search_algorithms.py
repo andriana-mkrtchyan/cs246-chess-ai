@@ -111,19 +111,22 @@ class MCTSNode:
         )
 
 
-def simulate(board):
+def simulate(board, root_color):
     """Rollout: random game until terminal state."""
     while not board.is_game_over():
         move = random.choice(list(board.legal_moves))
         board.push(move)
 
     if board.is_checkmate():
-        return 1 if board.turn == chess.BLACK else -1
+        loser = board.turn
+        winner = not loser
+        return 1 if winner == root_color else -1
     return 0
 
 
 def mcts(board, simulations=200):
     root = MCTSNode(board.copy())
+    root_color = board.turn
 
     for _ in range(simulations):
         node = root
@@ -142,7 +145,7 @@ def mcts(board, simulations=200):
             node = child
 
         # Simulation
-        result = simulate(node.board.copy())
+        result = simulate(node.board.copy(), root_color=root_color)
 
         # Backpropagation
         while node:

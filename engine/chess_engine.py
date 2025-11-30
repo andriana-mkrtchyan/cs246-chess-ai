@@ -371,8 +371,20 @@ class ChessEngine:
                 promotion_piece_type = chess.QUEEN
 
         # convert to row/col and actually make the move using existing logic
-        from_row, from_col = self._square_to_rc(best_move.from_square)
-        to_row, to_col = self._square_to_rc(best_move.to_square)
+        from_row, from_col = self._square_to_rc(from_sq)
+        to_row, to_col = self._square_to_rc(to_sq)
+        san = self.make_move(
+            from_row,
+            from_col,
+            to_row,
+            to_col)
+        # If the search move was missing a promotion flag,
+        # we retry with a QUEEN promotion.
+        if san is None and promotion_piece_type is not None:
+            move = chess.Move(from_sq, to_sq, promotion=promotion_piece_type)
+            if move in self.board.legal_moves:
+                self.board.push(move)
+                san = self.board.san(move)
 
         san = self.make_move(from_row, from_col, to_row, to_col)
         if san is None:
