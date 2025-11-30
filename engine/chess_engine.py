@@ -356,6 +356,20 @@ class ChessEngine:
         if best_move is None:
             return None
 
+        # ----------------------
+        #  HANDLE PROMOTION SAFELY
+        # ----------------------
+        from_sq = best_move.from_square
+        to_sq = best_move.to_square
+        moving_piece = self.board.piece_at(from_sq)
+
+        promotion_piece_type = None
+        if moving_piece and moving_piece.piece_type == chess.PAWN:
+            target_rank = chess.square_rank(to_sq)
+            if (moving_piece.color == chess.WHITE and target_rank == 7) or \
+                    (moving_piece.color == chess.BLACK and target_rank == 0):
+                promotion_piece_type = chess.QUEEN
+
         # convert to row/col and actually make the move using existing logic
         from_row, from_col = self._square_to_rc(best_move.from_square)
         to_row, to_col = self._square_to_rc(best_move.to_square)
