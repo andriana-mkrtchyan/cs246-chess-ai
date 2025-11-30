@@ -347,9 +347,15 @@ class ChessEngine:
                 maximizing=maximizing,
             )
         elif method == "iddfs":
-            best_move = iterative_deepening(self.board, max_depth=4)
+            best_move = iterative_deepening(
+                self.board,
+                max_depth=4,
+            )
         elif method == "mcts":
-            best_move = mcts(self.board, simulations=250)
+            best_move = mcts(
+                self.board,
+                simulations=250,
+            )
         else:
             best_move = random.choice(legal)
 
@@ -386,7 +392,6 @@ class ChessEngine:
                 self.board.push(move)
                 san = self.board.san(move)
 
-        san = self.make_move(from_row, from_col, to_row, to_col)
         if san is None:
             return None
 
