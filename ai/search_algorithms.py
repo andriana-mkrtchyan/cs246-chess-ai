@@ -48,7 +48,7 @@ def minimax(board, depth, maximizing):
 
 def alpha_beta(board, depth, alpha, beta, maximizing):
     if depth == 0 or board.is_game_over():
-        return quiescence(board, alpha, beta), None
+        return quiescence(board, alpha, beta, maximizing), None
 
     best_move = None
 
@@ -174,26 +174,51 @@ def iterative_deepening(board, max_depth):
 # QUIESCENCE SEARCH
 # ============================================================
 
-def quiescence(board, alpha, beta):
+def quiescence(board, alpha, beta, maximizing):
+    """
+    Quiescence search in minimax style.
+
+    - evaluate(board) is from White's perspective:
+      positive = good for White, negative = good for Black.
+    - 'maximizing = True' means the current player is trying
+      to increase this score (i.e., White at root),
+      'maximizing = False' means trying to decrease it.
+    """
     stand_pat = evaluate(board)
 
-    if stand_pat >= beta:
-        return beta
-    if alpha < stand_pat:
-        alpha = stand_pat
+    if maximizing:
+        # If even the "stand pat" score is too good, prune.
+        if stand_pat >= beta:
+            return stand_pat
+        if stand_pat > alpha:
+            alpha = stand_pat
+    else:
+        # Minimizing: if stand_pat already too low, prune.
+        if stand_pat <= alpha:
+            return stand_pat
+        if stand_pat < beta:
+            beta = stand_pat
 
+    # Only search capture moves to remove noisy tactical swings.
     for move in board.legal_moves:
         if not board.is_capture(move):
             continue
 
         board.push(move)
-        score = -quiescence(board, -beta, -alpha)
+        score = quiescence(board, alpha, beta, not maximizing)
         board.pop()
 
-        if score >= beta:
-            return beta
-        if score > alpha:
-            alpha = score
+        if maximizing:
+            if score > alpha:
+                alpha = score
+            if alpha >= beta:
+                break  # beta cutoff
+        else:
+            if score < beta:
+                beta = score
+            if alpha >= beta:
+                break  # alpha cutoff
 
-    return alpha
+    return alpha if maximizing else beta
+
 

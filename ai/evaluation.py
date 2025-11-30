@@ -98,7 +98,7 @@ def king_safety(board: chess.Board, color: chess.Color):
 
 
 # ======================================================================
-# PIECE-SQUARE TABLES (sample small PSTs)
+# PIECE-SQUARE TABLES (PST for Knight moves)
 # ======================================================================
 
 KNIGHT_TABLE = [
