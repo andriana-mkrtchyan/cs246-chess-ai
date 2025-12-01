@@ -1,0 +1,12 @@
+Game,WhiteAlgo,BlackAlgo,White count,Black count,Pieces,Result,Moves
+1,alphabeta,mcts,2,2,"[('w', 'K', 'g6'), ('w', 'B', 'f6'), ('b', 'K', 'd5'), ('b', 'N', 'h2')]",0,21
+2,alphabeta,mcts,2,2,"[('b', 'Q', 'c8'), ('w', 'N', 'g6'), ('w', 'K', 'g1'), ('b', 'K', 'c1')]",0,14
+3,alphabeta,mcts,3,1,"[('w', 'K', 'h7'), ('w', 'R', 'a5'), ('b', 'K', 'b4'), ('w', 'Q', 'f2')]",0,100
+4,alphabeta,mcts,2,2,"[('w', 'K', 'f5'), ('b', 'P', 'b5'), ('b', 'K', 'a4'), ('w', 'N', 'd3')]",0,6
+5,alphabeta,mcts,3,1,"[('w', 'K', 'g8'), ('w', 'Q', 'c5'), ('b', 'K', 'g3'), ('w', 'B', 'f1')]",0,100
+"
+--- MATCH COMPLETE ---"
+alphabeta (White) wins: 0
+mcts (Black) wins: 0
+Draws: 5
+Average game length: 48.2 moves

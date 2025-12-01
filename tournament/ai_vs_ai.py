@@ -1,5 +1,4 @@
 import csv
-import time
 import chess
 
 from engine.chess_engine import ChessEngine
