@@ -9,6 +9,7 @@ SEARCH_FUNCS = {
     "alphabeta": lambda engine: engine.find_best_move("alphabeta"),
     "iddfs": lambda engine: engine.find_best_move("iddfs"),
     "mcts": lambda engine: engine.find_best_move("mcts"),
+    "random": lambda engine: engine.find_best_move("random")
 }
 
 def play_single_game(white_algo: str, black_algo: str, max_moves=100):
@@ -40,7 +41,7 @@ def play_single_game(white_algo: str, black_algo: str, max_moves=100):
     return 0, move_counter   # draw
 
 
-def run_matchup(white_algo, black_algo, games=100, log_file="results.csv"):
+def run_matchup(white_algo, black_algo="random", games=100, log_file="results.csv"):
     """
     Runs many games between two agents.
     Saves results to a CSV for later analysis.
@@ -72,11 +73,11 @@ def run_matchup(white_algo, black_algo, games=100, log_file="results.csv"):
             writer.writerow([g, white_algo, black_algo, result, moves])
             print(f"Game {g}/{games}: result={result}  moves={moves}")
 
-        print("\n--- MATCH COMPLETE ---")
-        print(f"{white_algo} (White) wins: {white_wins}")
-        print(f"{black_algo} (Black) wins: {black_wins}")
-        print(f"Draws: {draws}")
-        print(f"Average game length: {total_moves / games:.1f} moves")
+        writer.writerow(["\n--- MATCH COMPLETE ---"])
+        writer.writerow([f"{white_algo} (White) wins: {white_wins}"])
+        writer.writerow([f"{black_algo} (Black) wins: {black_wins}"])
+        writer.writerow([f"Draws: {draws}"])
+        writer.writerow([f"Average game length: {total_moves / games:.1f} moves"])
 
     print("\n--- MATCH COMPLETE ---")
     print(f"{white_algo} (White) wins: {white_wins}")
@@ -94,5 +95,5 @@ def run_matchup(white_algo, black_algo, games=100, log_file="results.csv"):
 
 if __name__ == "__main__":
     # Example: AlphaBeta vs Minimax, 50 games
-    run_matchup("alphabeta", "mcts", games=20, log_file="ab_mcts_20.csv")
+    run_matchup("alphabeta", "mcts", games=30, log_file="ab_mcts_20_3.csv")
     #play_single_game("alphabeta", "minimax")

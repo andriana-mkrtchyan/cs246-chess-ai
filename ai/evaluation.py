@@ -26,9 +26,16 @@ def game_phase(board: chess.Board):
 # ======================================================================
 
 def mobility(board: chess.Board, color: chess.Color):
-    """Mobility = number of legal moves for each side."""
-    return sum(1 for move in board.legal_moves if board.piece_at(move.from_square).color == color)
-
+    """
+    Mobility = number of legal moves for the given side.
+    python-chess only generates moves for board.turn,
+    so we temporarily switch board.turn.
+    """
+    original_turn = board.turn
+    board.turn = color
+    count = sum(1 for _ in board.legal_moves)
+    board.turn = original_turn
+    return count
 
 # ======================================================================
 # PAWN STRUCTURE
@@ -58,15 +65,23 @@ def pawn_structure(board: chess.Board, color: chess.Color):
         if isolated:
             score -= 0.3
 
-    # passed pawns
+    # passed pawns (checks adjacent files too)
     for sq in pawns:
+        file = chess.square_file(sq)
         rank = chess.square_rank(sq)
         is_passed = True
+
         for other in board.pieces(chess.PAWN, not color):
-            if chess.square_file(other) == chess.square_file(sq):
-                if (color == chess.WHITE and chess.square_rank(other) > rank) or \
-                   (color == chess.BLACK and chess.square_rank(other) < rank):
+            other_file = chess.square_file(other)
+            other_rank = chess.square_rank(other)
+
+            # enemy pawn in same or adjacent file AND ahead of this pawn
+            if abs(other_file - file) <= 1:
+                if (color == chess.WHITE and other_rank > rank) or \
+                        (color == chess.BLACK and other_rank < rank):
                     is_passed = False
+                    break
+
         if is_passed:
             score += 0.5
 
@@ -83,18 +98,90 @@ def king_safety(board: chess.Board, color: chess.Color):
         return 0
 
     rank = chess.square_rank(king)
-
+    file = chess.square_file(king)
     # King safety by game phase
     phase = game_phase(board)
-    if phase == "opening":
+    if phase in ("opening", "middlegame"):
         # encourage castling / keeping king on back rank
         if rank != (0 if color == chess.WHITE else 7):
             return -0.5
-    elif phase == "endgame":
+        if file in (1, 6):
+            return +0.2
+        return 0
+    else:
+        center_distance = abs(file - 3.5) + abs(rank - 3.5)
         # centralized king is good in endgame
-        return (3 - abs(3.5 - chess.square_file(king))) * 0.1
+        return -(center_distance * 0.3)
 
-    return 0
+
+# ======================================================================
+# KING OPPOSITION / DISTANCE (ENDGAME)
+# ======================================================================
+
+def king_opposition(board: chess.Board):
+    """
+    Small bonus for taking opposition in K vs K type endings.
+    Only applies if queens & rooks are mostly gone.
+    """
+    phase = game_phase(board)
+    if phase != "endgame":
+        return 0
+
+    wk = board.king(chess.WHITE)
+    bk = board.king(chess.BLACK)
+    if wk is None or bk is None:
+        return 0
+
+    wr, wc = chess.square_rank(wk), chess.square_file(wk)
+    br, bc = chess.square_rank(bk), chess.square_file(bk)
+
+    # Manhattan distance
+    dist = abs(wr - br) + abs(wc - bc)
+
+    # Closer king is usually better
+    return (6 - dist) * 0.2  # White gets +, Black gets - later
+
+
+# ======================================================================
+# SIMPLE ROOK/QUEEN ENDGAME PRESSURE
+# ======================================================================
+
+def endgame_pressure(board: chess.Board):
+    """
+    Bonus for pushing the enemy king toward the edge,
+    common pattern in KQ vs K or KR vs K mates.
+    """
+    phase = game_phase(board)
+    if phase != "endgame":
+        return 0
+
+    score = 0
+
+    for color in (chess.WHITE, chess.BLACK):
+        king_sq = board.king(not color)  # enemy king
+        if king_sq is None:
+            continue
+
+        enemy_rank = chess.square_rank(king_sq)
+        enemy_file = chess.square_file(king_sq)
+
+        # distance from edge (edges = good target)
+        dist_edge = min(enemy_rank, 7 - enemy_rank, enemy_file, 7 - enemy_file)
+
+        # if attacker has heavy pieces, encourage cornering
+        has_heavy = (
+            len(board.pieces(chess.QUEEN, color)) > 0 or
+            len(board.pieces(chess.ROOK, color)) > 0
+        )
+
+        if has_heavy:
+            if color == chess.WHITE:
+                score += (3 - dist_edge) * 0.4
+            else:
+                score -= (3 - dist_edge) * 0.4
+
+    return score
+
 
 
 # ======================================================================
@@ -152,5 +239,11 @@ def evaluate_position(board: chess.Board):
     # King safety
     score += king_safety(board, chess.WHITE)
     score -= king_safety(board, chess.BLACK)
+
+    # King opposition
+    score += king_opposition(board)
+
+    # Endgame pressure
+    score += endgame_pressure(board)
 
     return score
