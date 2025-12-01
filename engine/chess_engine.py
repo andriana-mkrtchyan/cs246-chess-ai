@@ -53,36 +53,44 @@ class ChessEngine:
         self.black_captures.clear()
         self._capture_history.clear()
 
+    def load_fen(self, fen: str):
+        """
+        Replace the current board with the position given by FEN.
+        Clears histories (for testing / endgame experiments).
+        """
+        self.board = chess.Board(fen)
+        self.move_history.clear()
+        self.white_captures.clear()
+        self.black_captures.clear()
+        self._capture_history.clear()
+
     @staticmethod
     def random_endgame_fen(min_pieces=3, max_pieces=6):
         """
-        Generate a random legal endgame FEN.
+        Generate a random legal, NON-GAME-OVER endgame FEN.
 
         - always includes both kings
         - total number of pieces is between min_pieces and max_pieces
         - side to move is random
         """
         while True:
-            # start from an empty board
             board = chess.Board(None)
 
-            # list of all squares, shuffled
+            # all squares, shuffled
             squares = list(chess.SQUARES)
             random.shuffle(squares)
 
-            # place white and black kings
+            # place kings first
             wk = squares.pop()
             bk = squares.pop()
             board.set_piece_at(wk, chess.Piece(chess.KING, chess.WHITE))
             board.set_piece_at(bk, chess.Piece(chess.KING, chess.BLACK))
 
-            # how many extra pieces to add
+            # how many extra pieces to add (beyond the 2 kings)
             num_extra = random.randint(max(0, min_pieces - 2), max_pieces - 2)
 
-            piece_types = [
-                chess.PAWN, chess.KNIGHT, chess.BISHOP,
-                chess.ROOK, chess.QUEEN
-            ]
+            piece_types = [chess.PAWN, chess.KNIGHT, chess.BISHOP,
+                           chess.ROOK, chess.QUEEN]
             colors = [chess.WHITE, chess.BLACK]
 
             for _ in range(num_extra):
@@ -91,14 +99,23 @@ class ChessEngine:
                 sq = squares.pop()
                 ptype = random.choice(piece_types)
                 color = random.choice(colors)
-                board.set_piece_at(sq, chess.Piece(ptype, color))
 
-            # make sure the position is legal (no illegal checks, etc.)
-            if not board.is_valid():
-                continue
+                # forbid pawns on 1st/8th rank to avoid illegal or weird promo states
+                if ptype == chess.PAWN and (sq < 8 or sq >= 56):
+                    continue
+
+                board.set_piece_at(sq, chess.Piece(ptype, color))
 
             # random side to move
             board.turn = random.choice([chess.WHITE, chess.BLACK])
+
+            # make sure the position is legal
+            if not board.is_valid():
+                continue
+
+            # skip positions where the game is already finished
+            if board.is_game_over():
+                continue
 
             return board.fen()
 
@@ -321,8 +338,7 @@ class ChessEngine:
             - "alphabeta" -> minimax with alpha-beta + quiescence
             - "iddfs"     -> iterative deepening over alpha-beta
             - "mcts"      -> Monte Carlo Tree Search
-            - anything else -> random move fallback
-
+            - anything else -> random legal move
         Returns (from_row, from_col, to_row, to_col, notation) or None.
         """
         if self.is_game_over():
@@ -338,23 +354,23 @@ class ChessEngine:
         # choose search algorithm
         if method == "minimax":
             _, best_move = minimax(self.board, depth=3, maximizing=maximizing)
-        elif method == "alphabeta":
+        elif method == "iddfs":
+            best_move = iterative_deepening(
+                self.board,
+                max_depth=5,
+            )
+        elif method == "mcts":
+            best_move = mcts(
+                self.board,
+                simulations=300,
+            )
+        elif method=="alphabeta":
             _, best_move = alpha_beta(
                 self.board,
                 depth=4,
                 alpha=-float("inf"),
                 beta=float("inf"),
                 maximizing=maximizing,
-            )
-        elif method == "iddfs":
-            best_move = iterative_deepening(
-                self.board,
-                max_depth=4,
-            )
-        elif method == "mcts":
-            best_move = mcts(
-                self.board,
-                simulations=250,
             )
         else:
             best_move = random.choice(legal)
