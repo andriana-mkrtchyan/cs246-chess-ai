@@ -1,0 +1,27 @@
+Game,WhiteAlgo,BlackAlgo,Result,Moves
+1,alphabeta,mcts,0,100
+2,alphabeta,mcts,0,13
+3,alphabeta,mcts,0,1
+4,alphabeta,mcts,0,100
+5,alphabeta,mcts,0,100
+6,alphabeta,mcts,0,2
+7,alphabeta,mcts,0,100
+8,alphabeta,mcts,1,9
+9,alphabeta,mcts,0,28
+10,alphabeta,mcts,0,44
+11,alphabeta,mcts,-1,30
+12,alphabeta,mcts,0,100
+13,alphabeta,mcts,-1,1
+14,alphabeta,mcts,0,100
+15,alphabeta,mcts,1,43
+16,alphabeta,mcts,0,100
+17,alphabeta,mcts,0,25
+18,alphabeta,mcts,0,100
+19,alphabeta,mcts,-1,82
+20,alphabeta,mcts,1,20
+"
+",-,-,-, ,M,A,T,C,H, ,C,O,M,P,L,E,T,E, ,-,-,-
+a,l,p,h,a,b,e,t,a, ,(,W,h,i,t,e,), ,w,i,n,s,:, ,3
+m,c,t,s, ,(,B,l,a,c,k,), ,w,i,n,s,:, ,3
+D,r,a,w,s,:, ,1,4
+A,v,e,r,a,g,e, ,g,a,m,e, ,l,e,n,g,t,h,:, ,5,4,.,9, ,m,o,v,e,s
