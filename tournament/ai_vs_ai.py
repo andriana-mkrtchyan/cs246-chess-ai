@@ -34,7 +34,8 @@ def play_single_game(white_algo: str, black_algo: str, max_moves=100):
 
     # Determine result
     if engine.board.is_checkmate():
-        print(f"Move count: {move_counter}, Winner: {"WHITE" if engine.board.turn==chess.BLACK else "BLACK" } ")
+        current_player = "WHITE" if engine.board.turn == chess.WHITE else "BLACK"
+        print(f"Move count: {move_counter}, Current Player: {current_player}")
         return (1 if engine.board.turn == chess.BLACK else -1), move_counter
 
     print("Draw, moves:", move_counter)

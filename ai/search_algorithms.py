@@ -151,6 +151,7 @@ def mcts(board, simulations=200):
         while node:
             node.visits += 1
             node.value += result
+            result -= result
             node = node.parent
 
     best_child = max(root.children, key=lambda n: n.visits)
@@ -159,7 +160,7 @@ def mcts(board, simulations=200):
 
 
 # ============================================================
-# ITERATIVE DEEPENING (wraps αβ)
+# ITERATIVE DEEPENING (wraps ab)
 # ============================================================
 
 def iterative_deepening(board, max_depth):
