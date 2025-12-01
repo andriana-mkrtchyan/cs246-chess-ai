@@ -12,6 +12,7 @@ SEARCH_FUNCS = {
     "random": lambda engine: engine.find_best_move("random")
 }
 
+
 def play_single_game(white_algo: str, black_algo: str, max_moves=100):
     """
     Plays one AI-vs-AI game and returns:
@@ -20,8 +21,9 @@ def play_single_game(white_algo: str, black_algo: str, max_moves=100):
     """
 
     engine = ChessEngine()
-    engine.reset_to_endgame_position()   # or classic if you want
-
+    engine.reset_to_endgame_position()  # or classic if you want
+    white_count, black_count = engine.count_pieces()
+    pieces = engine.get_piece_list()
     move_counter = 0
 
     while not engine.is_game_over() and move_counter < max_moves:
@@ -34,12 +36,12 @@ def play_single_game(white_algo: str, black_algo: str, max_moves=100):
 
     # Determine result
     if engine.board.is_checkmate():
-        current_player = "WHITE" if engine.board.turn == chess.WHITE else "BLACK"
-        print(f"Move count: {move_counter}, Current Player: {current_player}")
-        return (1 if engine.board.turn == chess.BLACK else -1), move_counter
+        winner = "WHITE" if engine.board.turn == chess.BLACK else "BLACK"
+        print(f"Move count: {move_counter}, Winner: {winner}")
+        return (1 if engine.board.turn == chess.BLACK else -1), white_count, black_count, pieces, move_counter
 
     print("Draw, moves:", move_counter)
-    return 0, move_counter   # draw
+    return 0, white_count, black_count, pieces, move_counter  # draw
 
 
 def run_matchup(white_algo, black_algo="random", games=100, log_file="results.csv"):
@@ -58,10 +60,10 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
     # CSV setup
     with open(log_file, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["Game", "WhiteAlgo", "BlackAlgo", "Result", "Moves"])
+        writer.writerow(["Game", "WhiteAlgo", "BlackAlgo", "White count", "Black count", "Pieces", "Result", "Moves"])
 
         for g in range(1, games + 1):
-            result, moves = play_single_game(white_algo, black_algo)
+            result, white_count, black_count, pieces, moves = play_single_game(white_algo, black_algo)
             total_moves += moves
 
             if result == 1:
@@ -71,8 +73,8 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
             else:
                 draws += 1
 
-            writer.writerow([g, white_algo, black_algo, result, moves])
-            print(f"Game {g}/{games}: result={result}  moves={moves}")
+            writer.writerow([g, white_algo, black_algo, white_count, black_count, pieces, result, moves])
+            print(f"Game {g}/{games}: result={result}  moves={moves} \nwhite count={white_count} black count={black_count} \npieces = {pieces}\n ")
 
         writer.writerow(["\n--- MATCH COMPLETE ---"])
         writer.writerow([f"{white_algo} (White) wins: {white_wins}"])
@@ -96,5 +98,5 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
 
 if __name__ == "__main__":
     # Example: AlphaBeta vs Minimax, 50 games
-    run_matchup("alphabeta", "mcts", games=30, log_file="ab_mcts_20_3.csv")
-    #play_single_game("alphabeta", "minimax")
+    run_matchup("alphabeta", "mcts", games=5, log_file="ab_mcts_20_4.csv")
+    # play_single_game("alphabeta", "minimax")

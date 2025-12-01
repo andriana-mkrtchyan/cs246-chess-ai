@@ -413,5 +413,21 @@ class ChessEngine:
 
         return from_row, from_col, to_row, to_col, san
 
+    # --- logging ------------------------------------------------------------
 
+    def count_pieces(self):
+        white = sum(1 for p in self.board.piece_map().values() if p.color == chess.WHITE)
+        black = sum(1 for p in self.board.piece_map().values() if p.color == chess.BLACK)
+        return white, black
 
+    def get_piece_list(self):
+        """
+        Return a list of tuples: (color, piece_type, square_name)
+        """
+        pieces = []
+        for sq, piece in self.board.piece_map().items():
+            color = 'w' if piece.color == chess.WHITE else 'b'
+            ptype = piece.symbol().upper()
+            square_name = chess.square_name(sq)
+            pieces.append((color, ptype, square_name))
+        return pieces
