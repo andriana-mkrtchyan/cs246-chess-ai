@@ -1,5 +1,6 @@
 import csv
 import chess
+import time
 
 from engine.chess_engine import ChessEngine
 
@@ -225,11 +226,70 @@ def run_matchup_fixed(
     }
 
 
+#Quick timing benchmark for minimax vs alpha-beta on fixed FENs
+def compare_minimax_vs_alphabeta(fen_file: str, samples: int = 50):
+    """
+    Compare average time per move of minimax vs alpha-beta on fixed positions.
+
+    For each FEN, runs one move search with minimax and one with alpha-beta,
+    then reports total and average time for each algorithm.
+    """
+    fens = load_fens_from_csv(fen_file)
+    if not fens:
+        raise ValueError(f"No FENs loaded from {fen_file}")
+
+    total_minimax_time = 0.0
+    total_alphabeta_time = 0.0
+    minimax_calls = 0
+    alphabeta_calls = 0
+
+    for i in range(samples):
+        fen = fens[i % len(fens)]
+
+        # minimax timing
+        engine_min = ChessEngine()
+        engine_min.load_fen(fen)
+        start = time.perf_counter()
+        SEARCH_FUNCS["minimax"](engine_min)
+        total_minimax_time += time.perf_counter() - start
+        minimax_calls += 1
+
+        # alpha-beta timing
+        engine_ab = ChessEngine()
+        engine_ab.load_fen(fen)
+        start = time.perf_counter()
+        SEARCH_FUNCS["alphabeta"](engine_ab)
+        total_alphabeta_time += time.perf_counter() - start
+        alphabeta_calls += 1
+
+    avg_minimax = total_minimax_time / minimax_calls if minimax_calls else 0.0
+    avg_alphabeta = total_alphabeta_time / alphabeta_calls if alphabeta_calls else 0.0
+
+    print("\n--- Search time comparison on fixed positions ---")
+    print(f"Samples: {samples}")
+    print(f"Minimax:   total {total_minimax_time:.4f}s, avg {avg_minimax:.6f}s per move")
+    print(f"AlphaBeta: total {total_alphabeta_time:.4f}s, avg {avg_alphabeta:.6f}s per move")
+
+    return {
+        "samples": samples,
+        "minimax_total": total_minimax_time,
+        "alphabeta_total": total_alphabeta_time,
+        "minimax_avg": avg_minimax,
+        "alphabeta_avg": avg_alphabeta,
+    }
+
+
+# if __name__ == "__main__":
+#     run_matchup_fixed(
+#         "iddfs",
+#         "alphabeta",
+#         games=50,
+#         log_file="fixed_iddfs_ab.csv",
+#         fen_file="endgame_positions.csv",
+#     )
+
 if __name__ == "__main__":
-    run_matchup_fixed(
-        "iddfs",
-        "alphabeta",
-        games=50,
-        log_file="fixed_iddfs_ab.csv",
+    compare_minimax_vs_alphabeta(
         fen_file="endgame_positions.csv",
+        samples=50
     )
