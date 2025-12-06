@@ -8,19 +8,19 @@ SEARCH_FUNCS = {
     "alphabeta": lambda engine: engine.find_best_move("alphabeta"),
     "iddfs": lambda engine: engine.find_best_move("iddfs"),
     "mcts": lambda engine: engine.find_best_move("mcts"),
-    "random": lambda engine: engine.find_best_move("random")
+    "random": lambda engine: engine.find_best_move("random"),
 }
 
 
 def play_single_game(white_algo: str, black_algo: str, max_moves=100):
     """
-    Plays one AI-vs-AI game and returns:
-        result (1 = white win, 0 = draw, -1 = black win)
-        moves_played
-    """
+    Play a single AI-vs-AI game and return:
+    (result, white_piece_count, black_piece_count, piece_list, moves_played).
 
+    result: 1 for White win, 0 for draw, -1 for Black win.
+    """
     engine = ChessEngine()
-    engine.reset_to_endgame_position()  # or classic if you want
+    engine.reset_to_endgame_position()
     white_count, black_count = engine.count_pieces()
     pieces = engine.get_piece_list()
     move_counter = 0
@@ -33,22 +33,22 @@ def play_single_game(white_algo: str, black_algo: str, max_moves=100):
 
         move_counter += 1
 
-    # Determine result
     if engine.board.is_checkmate():
         winner = "WHITE" if engine.board.turn == chess.BLACK else "BLACK"
         print(f"Move count: {move_counter}, Winner: {winner}")
         return (1 if engine.board.turn == chess.BLACK else -1), white_count, black_count, pieces, move_counter
 
     print("Draw, moves:", move_counter)
-    return 0, white_count, black_count, pieces, move_counter  # draw
+    return 0, white_count, black_count, pieces, move_counter
 
 
 def run_matchup(white_algo, black_algo="random", games=100, log_file="results.csv"):
     """
-    Runs many games between two agents.
-    Saves results to a CSV for later analysis.
-    """
+    Run multiple AI-vs-AI games between two algorithms and log results to CSV.
 
+    Returns a summary dictionary with white wins, black wins, draws,
+    and average game length in moves.
+    """
     print(f"Running {games} games: {white_algo} (white) vs {black_algo} (black)")
 
     white_wins = 0
@@ -56,7 +56,6 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
     draws = 0
     total_moves = 0
 
-    # CSV setup
     with open(log_file, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["Game", "WhiteAlgo", "BlackAlgo", "White count", "Black count", "Pieces", "Result", "Moves"])
@@ -73,7 +72,11 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
                 draws += 1
 
             writer.writerow([g, white_algo, black_algo, white_count, black_count, pieces, result, moves])
-            print(f"Game {g}/{games}: result={result}  moves={moves} \nwhite count={white_count} black count={black_count} \npieces = {pieces}\n ")
+            print(
+                f"Game {g}/{games}: result={result}  moves={moves} \n"
+                f"white count={white_count} black count={black_count} \n"
+                f"pieces = {pieces}\n "
+            )
 
         writer.writerow(["\n--- MATCH COMPLETE ---"])
         writer.writerow([f"{white_algo} (White) wins: {white_wins}"])
@@ -96,6 +99,4 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
 
 
 if __name__ == "__main__":
-    # Example: AlphaBeta vs Minimax, 50 games
     run_matchup("mcts", "iddfs", games=20, log_file="new_rollout_changed_changed_mcts_300_iddfs_5_20.csv")
-    # play_single_game("alphabeta", "minimax")

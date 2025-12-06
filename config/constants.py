@@ -14,7 +14,6 @@ PIECE_SETS = {
 }
 
 
-
 PIECE_VALUES = {"P": 1, "N": 3, "B": 3, "R": 5, "Q": 9, "K": 0}
 
 THEMES = {
@@ -46,19 +45,16 @@ THEMES = {
         "selected": "#FDE68A",
         "last_move": "#FBCFE8",
     },
-
-    # NEW: warm sunset theme (cream + red-brown)
     "Sunset": {
-        "light": "#FDEBD0",   # soft cream
-        "dark":  "#C4563F",   # terracotta
+        "light": "#FDEBD0",
+        "dark": "#C4563F",
         "highlight": "#F5CBA7",
         "selected": "#F9E79F",
         "last_move": "#FAD7A0",
     },
-
     "Galaxy": {
-        "light": "#2F3640",   # dark gray-blue
-        "dark":  "#192A56",   # deep navy
+        "light": "#2F3640",
+        "dark": "#192A56",
         "highlight": "#00A8FF",
         "selected": "#9C88FF",
         "last_move": "#273C75",
