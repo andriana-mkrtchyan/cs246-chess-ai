@@ -97,5 +97,5 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
 
 if __name__ == "__main__":
     # Example: AlphaBeta vs Minimax, 50 games
-    run_matchup("alphabeta", "mcts", games=5, log_file="ab_mcts_20_4.csv")
+    run_matchup("mcts", "iddfs", games=20, log_file="new_rollout_changed_changed_mcts_300_iddfs_5_20.csv")
     # play_single_game("alphabeta", "minimax")

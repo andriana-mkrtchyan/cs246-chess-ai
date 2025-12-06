@@ -5,6 +5,7 @@ from ai.search_algorithms import (
     minimax,
     alpha_beta,
     iterative_deepening,
+    iddfs_alphabeta_move,
     mcts,
 )
 from ai.evaluation import evaluate_position
@@ -355,9 +356,9 @@ class ChessEngine:
         if method == "minimax":
             _, best_move = minimax(self.board, depth=3, maximizing=maximizing)
         elif method == "iddfs":
-            best_move = iterative_deepening(
+            best_move = iddfs_alphabeta_move(
                 self.board,
-                max_depth=5,
+                max_depth=4,
             )
         elif method == "mcts":
             best_move = mcts(

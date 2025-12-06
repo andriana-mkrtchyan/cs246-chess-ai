@@ -1,0 +1,64 @@
+Game,WhiteAlgo,BlackAlgo,White count,Black count,Pieces,Result,Moves,DrawReason
+1,alphabeta,iddfs,3,3,"[('w', 'N', 'a7'), ('b', 'K', 'a6'), ('w', 'K', 'h4'), ('b', 'B', 'd4'), ('w', 'R', 'c1'), ('b', 'R', 'b1')]",1,61,
+2,alphabeta,iddfs,2,3,"[('w', 'K', 'a8'), ('b', 'K', 'h6'), ('w', 'B', 'f6'), ('b', 'Q', 'a4'), ('b', 'P', 'd2')]",0,100,move_limit
+3,alphabeta,iddfs,3,1,"[('w', 'B', 'h8'), ('w', 'B', 'c6'), ('w', 'K', 'g4'), ('b', 'K', 'e1')]",0,100,move_limit
+4,alphabeta,iddfs,3,2,"[('b', 'Q', 'e8'), ('b', 'K', 'b7'), ('w', 'P', 'f3'), ('w', 'Q', 'e2'), ('w', 'K', 'd1')]",0,27,threefold
+5,alphabeta,iddfs,1,2,"[('w', 'K', 'c6'), ('b', 'R', 'h5'), ('b', 'K', 'g2')]",0,50,threefold
+6,alphabeta,iddfs,4,2,"[('w', 'B', 'a8'), ('w', 'K', 'h7'), ('b', 'K', 'e5'), ('w', 'N', 'b5'), ('b', 'N', 'c3'), ('w', 'R', 'g2')]",0,100,move_limit
+7,alphabeta,iddfs,1,4,"[('b', 'B', 'h8'), ('w', 'K', 'a5'), ('b', 'P', 'd2'), ('b', 'B', 'c2'), ('b', 'K', 'b2')]",-1,12,
+8,alphabeta,iddfs,2,1,"[('w', 'K', 'b7'), ('b', 'K', 'f5'), ('w', 'R', 'h3')]",1,73,
+9,alphabeta,iddfs,1,2,"[('b', 'K', 'h8'), ('b', 'P', 'd7'), ('w', 'K', 'a1')]",0,100,move_limit
+10,alphabeta,iddfs,2,1,"[('w', 'K', 'h7'), ('b', 'K', 'a7'), ('w', 'P', 'h5')]",0,100,move_limit
+11,alphabeta,iddfs,4,1,"[('w', 'B', 'f8'), ('w', 'K', 'b8'), ('w', 'B', 'c7'), ('w', 'Q', 'b7'), ('b', 'K', 'b3')]",1,10,
+12,alphabeta,iddfs,3,3,"[('b', 'K', 'h7'), ('w', 'N', 'h6'), ('b', 'N', 'd5'), ('w', 'R', 'c5'), ('b', 'R', 'd2'), ('w', 'K', 'd1')]",0,39,threefold
+13,alphabeta,iddfs,2,1,"[('b', 'K', 'a8'), ('w', 'K', 'd6'), ('w', 'R', 'f2')]",1,12,
+14,alphabeta,iddfs,3,3,"[('b', 'P', 'e7'), ('w', 'P', 'd5'), ('b', 'K', 'b4'), ('b', 'P', 'f2'), ('w', 'P', 'e2'), ('w', 'K', 'a2')]",-1,27,
+15,alphabeta,iddfs,2,2,"[('w', 'B', 'f6'), ('w', 'K', 'a6'), ('b', 'K', 'a3'), ('b', 'R', 'h1')]",0,83,threefold
+16,alphabeta,iddfs,2,1,"[('w', 'P', 'g4'), ('w', 'K', 'b4'), ('b', 'K', 'f1')]",1,26,
+17,alphabeta,iddfs,1,3,"[('b', 'Q', 'a8'), ('b', 'K', 'f6'), ('w', 'K', 'h4'), ('b', 'P', 'h2')]",-1,4,
+18,alphabeta,iddfs,2,3,"[('b', 'K', 'c7'), ('w', 'P', 'e6'), ('b', 'P', 'c4'), ('b', 'R', 'f2'), ('w', 'K', 'g1')]",0,9,insufficient_material
+19,alphabeta,iddfs,2,1,"[('b', 'K', 'h6'), ('w', 'P', 'a3'), ('w', 'K', 'f1')]",0,39,threefold
+20,alphabeta,iddfs,2,2,"[('w', 'K', 'f7'), ('b', 'Q', 'a5'), ('w', 'B', 'h4'), ('b', 'K', 'c2')]",0,100,move_limit
+21,alphabeta,iddfs,2,3,"[('b', 'K', 'b7'), ('w', 'K', 'd5'), ('b', 'N', 'b5'), ('b', 'Q', 'a3'), ('w', 'R', 'b1')]",0,100,move_limit
+22,alphabeta,iddfs,3,1,"[('w', 'N', 'g7'), ('w', 'K', 'h6'), ('w', 'R', 'f6'), ('b', 'K', 'e5')]",1,79,
+23,alphabeta,iddfs,1,3,"[('b', 'Q', 'c8'), ('w', 'K', 'b5'), ('b', 'K', 'e2'), ('b', 'R', 'e1')]",-1,98,
+24,alphabeta,iddfs,4,2,"[('w', 'Q', 'f8'), ('b', 'Q', 'h7'), ('w', 'R', 'c7'), ('w', 'K', 'a7'), ('w', 'N', 'f3'), ('b', 'K', 'h1')]",0,26,threefold
+25,alphabeta,iddfs,3,2,"[('w', 'B', 'a8'), ('b', 'B', 'd7'), ('w', 'K', 'f5'), ('b', 'K', 'a5'), ('w', 'R', 'd1')]",1,99,
+26,alphabeta,iddfs,2,2,"[('b', 'N', 'd8'), ('b', 'K', 'd7'), ('w', 'N', 'h6'), ('w', 'K', 'b6')]",0,37,insufficient_material
+27,alphabeta,iddfs,2,2,"[('b', 'K', 'a5'), ('b', 'Q', 'e4'), ('w', 'K', 'c4'), ('w', 'R', 'f3')]",0,100,move_limit
+28,alphabeta,iddfs,1,3,"[('w', 'K', 'a6'), ('b', 'B', 'h5'), ('b', 'R', 'f5'), ('b', 'K', 'd1')]",0,100,move_limit
+29,alphabeta,iddfs,3,1,"[('w', 'R', 'd6'), ('w', 'R', 'e5'), ('b', 'K', 'c5'), ('w', 'K', 'c2')]",0,36,threefold
+30,alphabeta,iddfs,3,3,"[('w', 'R', 'f7'), ('w', 'N', 'b6'), ('w', 'K', 'f4'), ('b', 'N', 'e3'), ('b', 'N', 'b3'), ('b', 'K', 'f2')]",0,50,threefold
+31,alphabeta,iddfs,2,1,"[('w', 'K', 'c6'), ('w', 'P', 'b5'), ('b', 'K', 'f1')]",0,98,threefold
+32,alphabeta,iddfs,1,2,"[('b', 'K', 'e8'), ('b', 'P', 'e4'), ('w', 'K', 'e3')]",0,2,insufficient_material
+33,alphabeta,iddfs,2,3,"[('b', 'N', 'g8'), ('b', 'K', 'd8'), ('w', 'Q', 'd4'), ('b', 'N', 'b4'), ('w', 'K', 'h3')]",1,44,
+34,alphabeta,iddfs,2,3,"[('w', 'R', 'a8'), ('w', 'K', 'f6'), ('b', 'B', 'd6'), ('b', 'N', 'a6'), ('b', 'K', 'f4')]",1,53,
+35,alphabeta,iddfs,2,4,"[('b', 'K', 'h8'), ('w', 'K', 'f7'), ('b', 'R', 'd4'), ('b', 'Q', 'h3'), ('w', 'N', 'b3'), ('b', 'Q', 'b2')]",-1,59,
+36,alphabeta,iddfs,2,4,"[('b', 'N', 'b8'), ('b', 'Q', 'a8'), ('b', 'K', 'b5'), ('b', 'R', 'h3'), ('w', 'N', 'h2'), ('w', 'K', 'a1')]",0,100,move_limit
+37,alphabeta,iddfs,4,1,"[('b', 'K', 'g8'), ('w', 'B', 'a8'), ('w', 'K', 'a6'), ('w', 'Q', 'b5'), ('w', 'P', 'c3')]",1,7,
+38,alphabeta,iddfs,1,2,"[('b', 'R', 'g8'), ('w', 'K', 'h6'), ('b', 'K', 'f6')]",-1,52,
+39,alphabeta,iddfs,1,4,"[('b', 'K', 'c7'), ('b', 'R', 'a7'), ('b', 'P', 'b5'), ('b', 'Q', 'd4'), ('w', 'K', 'g3')]",0,100,move_limit
+40,alphabeta,iddfs,2,3,"[('w', 'K', 'a8'), ('w', 'N', 'f7'), ('b', 'K', 'g6'), ('b', 'Q', 'f4'), ('b', 'R', 'c2')]",0,100,move_limit
+41,alphabeta,iddfs,1,2,"[('b', 'K', 'c7'), ('b', 'P', 'f6'), ('w', 'K', 'a6')]",0,100,move_limit
+42,alphabeta,iddfs,1,3,"[('b', 'P', 'f6'), ('b', 'Q', 'c5'), ('w', 'K', 'e4'), ('b', 'K', 'e1')]",-1,12,
+43,alphabeta,iddfs,3,3,"[('w', 'Q', 'b7'), ('b', 'K', 'h6'), ('b', 'Q', 'b6'), ('w', 'N', 'b5'), ('w', 'K', 'c4'), ('b', 'P', 'b2')]",1,21,
+44,alphabeta,iddfs,2,4,"[('w', 'K', 'b5'), ('b', 'B', 'a5'), ('b', 'P', 'g4'), ('b', 'K', 'c3'), ('w', 'N', 'f2'), ('b', 'N', 'c2')]",0,100,move_limit
+45,alphabeta,iddfs,1,3,"[('b', 'R', 'h8'), ('b', 'K', 'e8'), ('w', 'K', 'c7'), ('b', 'Q', 'b4')]",-1,3,
+46,alphabeta,iddfs,2,3,"[('b', 'R', 'a8'), ('b', 'K', 'd5'), ('w', 'Q', 'e4'), ('w', 'K', 'd3'), ('b', 'R', 'b1')]",0,17,threefold
+47,alphabeta,iddfs,3,2,"[('b', 'N', 'c8'), ('w', 'K', 'e6'), ('w', 'N', 'b6'), ('b', 'K', 'a6'), ('w', 'P', 'e4')]",0,24,threefold
+48,alphabeta,iddfs,1,2,"[('b', 'Q', 'f7'), ('b', 'K', 'c6'), ('w', 'K', 'b4')]",0,100,move_limit
+49,alphabeta,iddfs,1,3,"[('b', 'R', 'b8'), ('w', 'K', 'g6'), ('b', 'K', 'h3'), ('b', 'R', 'g1')]",-1,24,
+50,alphabeta,iddfs,4,1,"[('w', 'K', 'c8'), ('w', 'R', 'd7'), ('w', 'R', 'g2'), ('b', 'K', 'd1'), ('w', 'N', 'c1')]",1,18,
+"
+--- MATCH COMPLETE ---"
+alphabeta (White) wins: 12
+iddfs (Black) wins: 9
+Draws: 29
+Average game length: 56.6 moves
+Draw breakdown:
+move_limit: 15
+insufficient_material: 3
+stalemate: 0
+threefold: 11
+fifty_move: 0
+other: 0

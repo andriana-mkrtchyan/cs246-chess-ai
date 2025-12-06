@@ -1,0 +1,64 @@
+Game,WhiteAlgo,BlackAlgo,White count,Black count,Pieces,Result,Moves,DrawReason
+1,iddfs,mcts,4,1,"[('w', 'R', 'd8'), ('w', 'R', 'f7'), ('w', 'N', 'c7'), ('w', 'K', 'g4'), ('b', 'K', 'a1')]",1,60,
+2,iddfs,mcts,2,2,"[('w', 'Q', 'h5'), ('b', 'K', 'b3'), ('w', 'K', 'h2'), ('b', 'N', 'f2')]",1,55,
+3,iddfs,mcts,1,2,"[('b', 'K', 'f8'), ('b', 'Q', 'h7'), ('w', 'K', 'a7')]",0,43,insufficient_material
+4,iddfs,mcts,2,2,"[('w', 'K', 'c8'), ('b', 'K', 'g6'), ('w', 'R', 'a5'), ('b', 'N', 'e2')]",1,14,
+5,iddfs,mcts,1,3,"[('b', 'B', 'h7'), ('w', 'K', 'g7'), ('b', 'K', 'g1'), ('b', 'Q', 'c1')]",0,25,insufficient_material
+6,iddfs,mcts,3,2,"[('w', 'K', 'g5'), ('w', 'R', 'a5'), ('w', 'B', 'f4'), ('b', 'K', 'd4'), ('b', 'B', 'h3')]",1,20,
+7,iddfs,mcts,2,1,"[('w', 'K', 'g7'), ('w', 'P', 'c2'), ('b', 'K', 'e1')]",1,22,
+8,iddfs,mcts,1,4,"[('b', 'B', 'g7'), ('b', 'K', 'h5'), ('w', 'K', 'd5'), ('b', 'B', 'b5'), ('b', 'R', 'e1')]",0,24,insufficient_material
+9,iddfs,mcts,2,3,"[('w', 'R', 'f7'), ('w', 'K', 'a6'), ('b', 'P', 'h4'), ('b', 'N', 'h1'), ('b', 'K', 'e1')]",1,29,
+10,iddfs,mcts,1,3,"[('w', 'K', 'g6'), ('b', 'Q', 'e4'), ('b', 'K', 'b2'), ('b', 'B', 'c1')]",0,15,insufficient_material
+11,iddfs,mcts,3,3,"[('w', 'P', 'd7'), ('w', 'R', 'a7'), ('b', 'P', 'h6'), ('w', 'K', 'f6'), ('b', 'K', 'e2'), ('b', 'P', 'b2')]",0,100,move_limit
+12,iddfs,mcts,2,3,"[('w', 'N', 'h4'), ('w', 'K', 'f4'), ('b', 'N', 'c2'), ('b', 'K', 'g1'), ('b', 'R', 'b1')]",0,100,move_limit
+13,iddfs,mcts,3,2,"[('w', 'K', 'g8'), ('w', 'Q', 'g5'), ('b', 'N', 'b4'), ('b', 'K', 'a3'), ('w', 'P', 'a2')]",0,97,threefold
+14,iddfs,mcts,2,3,"[('b', 'K', 'a7'), ('w', 'N', 'h5'), ('b', 'R', 'd4'), ('b', 'R', 'c2'), ('w', 'K', 'b1')]",0,66,insufficient_material
+15,iddfs,mcts,2,1,"[('w', 'K', 'h7'), ('w', 'R', 'b7'), ('b', 'K', 'h1')]",1,37,
+16,iddfs,mcts,3,1,"[('w', 'K', 'f7'), ('w', 'P', 'e5'), ('b', 'K', 'e1'), ('w', 'B', 'd1')]",1,22,
+17,iddfs,mcts,1,3,"[('w', 'K', 'd8'), ('b', 'K', 'b7'), ('b', 'R', 'e4'), ('b', 'R', 'a2')]",-1,2,
+18,iddfs,mcts,3,3,"[('b', 'K', 'h8'), ('w', 'P', 'd6'), ('b', 'N', 'a6'), ('b', 'N', 'h3'), ('w', 'P', 'c2'), ('w', 'K', 'h1')]",1,72,
+19,iddfs,mcts,3,2,"[('b', 'P', 'e4'), ('b', 'K', 'e2'), ('w', 'B', 'b2'), ('w', 'K', 'h1'), ('w', 'R', 'g1')]",1,43,
+20,iddfs,mcts,3,2,"[('w', 'R', 'e6'), ('w', 'Q', 'e4'), ('w', 'K', 'b4'), ('b', 'B', 'f2'), ('b', 'K', 'a2')]",1,4,
+21,iddfs,mcts,2,2,"[('b', 'N', 'f6'), ('b', 'K', 'h4'), ('w', 'K', 'e2'), ('w', 'N', 'b1')]",0,4,insufficient_material
+22,iddfs,mcts,3,2,"[('w', 'R', 'h7'), ('b', 'K', 'e7'), ('b', 'B', 'f3'), ('w', 'P', 'f2'), ('w', 'K', 'c2')]",1,26,
+23,iddfs,mcts,2,1,"[('w', 'K', 'h5'), ('b', 'K', 'f5'), ('w', 'P', 'f2')]",0,5,insufficient_material
+24,iddfs,mcts,2,3,"[('w', 'R', 'f8'), ('b', 'K', 'a7'), ('w', 'K', 'f4'), ('b', 'P', 'h3'), ('b', 'R', 'f1')]",-1,30,
+25,iddfs,mcts,1,4,"[('b', 'Q', 'e8'), ('w', 'K', 'c8'), ('b', 'P', 'h5'), ('b', 'K', 'c5'), ('b', 'P', 'c2')]",-1,28,
+26,iddfs,mcts,2,2,"[('w', 'K', 'h8'), ('b', 'K', 'd7'), ('w', 'Q', 'f4'), ('b', 'P', 'd3')]",1,23,
+27,iddfs,mcts,5,1,"[('w', 'Q', 'h8'), ('w', 'K', 'b6'), ('w', 'B', 'g5'), ('w', 'B', 'b5'), ('b', 'K', 'd3'), ('w', 'N', 'c1')]",0,100,move_limit
+28,iddfs,mcts,2,1,"[('b', 'K', 'f7'), ('w', 'K', 'c5'), ('w', 'R', 'b1')]",0,25,threefold
+29,iddfs,mcts,3,2,"[('b', 'K', 'b8'), ('b', 'P', 'a6'), ('w', 'P', 'c5'), ('w', 'B', 'f3'), ('w', 'K', 'e3')]",1,41,
+30,iddfs,mcts,3,1,"[('b', 'K', 'b8'), ('w', 'R', 'h3'), ('w', 'Q', 'e3'), ('w', 'K', 'h2')]",1,7,
+31,iddfs,mcts,2,1,"[('w', 'K', 'a3'), ('w', 'Q', 'h2'), ('b', 'K', 'g2')]",0,1,insufficient_material
+32,iddfs,mcts,3,2,"[('b', 'K', 'd7'), ('w', 'R', 'b5'), ('w', 'K', 'b4'), ('w', 'R', 'a4'), ('b', 'R', 'a3')]",1,26,
+33,iddfs,mcts,2,3,"[('b', 'Q', 'e7'), ('b', 'R', 'a6'), ('w', 'K', 'h5'), ('w', 'Q', 'd2'), ('b', 'K', 'h1')]",0,6,stalemate
+34,iddfs,mcts,2,3,"[('b', 'K', 'g7'), ('w', 'K', 'e7'), ('b', 'P', 'c6'), ('b', 'R', 'd4'), ('w', 'R', 'd3')]",1,15,
+35,iddfs,mcts,2,3,"[('b', 'N', 'b8'), ('w', 'R', 'd6'), ('b', 'N', 'g5'), ('b', 'K', 'f5'), ('w', 'K', 'f1')]",1,33,
+36,iddfs,mcts,2,2,"[('w', 'B', 'g7'), ('b', 'P', 'e5'), ('b', 'K', 'b5'), ('w', 'K', 'h3')]",0,5,insufficient_material
+37,iddfs,mcts,2,4,"[('w', 'P', 'c5'), ('b', 'B', 'a5'), ('w', 'K', 'c4'), ('b', 'K', 'h3'), ('b', 'B', 'g2'), ('b', 'B', 'f1')]",1,57,
+38,iddfs,mcts,3,2,"[('w', 'Q', 'd6'), ('b', 'P', 'c6'), ('w', 'R', 'c5'), ('w', 'K', 'a4'), ('b', 'K', 'b2')]",1,10,
+39,iddfs,mcts,4,2,"[('w', 'K', 'c6'), ('w', 'B', 'a6'), ('w', 'R', 'b4'), ('b', 'R', 'f3'), ('w', 'R', 'd2'), ('b', 'K', 'a1')]",1,21,
+40,iddfs,mcts,4,2,"[('w', 'K', 'c8'), ('w', 'P', 'd7'), ('b', 'K', 'h3'), ('w', 'B', 'd3'), ('b', 'N', 'e1'), ('w', 'B', 'c1')]",1,18,
+41,iddfs,mcts,3,2,"[('b', 'K', 'h6'), ('w', 'K', 'c6'), ('w', 'P', 'a6'), ('b', 'R', 'a5'), ('w', 'B', 'd1')]",0,3,insufficient_material
+42,iddfs,mcts,1,2,"[('b', 'K', 'g7'), ('w', 'K', 'h2'), ('b', 'Q', 'g2')]",0,1,insufficient_material
+43,iddfs,mcts,3,2,"[('w', 'B', 'a8'), ('b', 'P', 'f7'), ('b', 'K', 'd7'), ('w', 'K', 'a7'), ('w', 'B', 'h4')]",0,78,threefold
+44,iddfs,mcts,3,3,"[('w', 'N', 'g8'), ('w', 'R', 'c8'), ('b', 'K', 'd6'), ('b', 'B', 'a5'), ('w', 'K', 'c1'), ('b', 'B', 'a1')]",1,31,
+45,iddfs,mcts,1,2,"[('w', 'K', 'f8'), ('b', 'K', 'e3'), ('b', 'R', 'h1')]",0,100,move_limit
+46,iddfs,mcts,3,2,"[('b', 'Q', 'f8'), ('w', 'P', 'a7'), ('w', 'N', 'g6'), ('b', 'K', 'a5'), ('w', 'K', 'h3')]",1,19,
+47,iddfs,mcts,2,2,"[('w', 'K', 'f7'), ('w', 'P', 'e6'), ('b', 'K', 'c5'), ('b', 'Q', 'c3')]",1,99,
+48,iddfs,mcts,3,3,"[('b', 'K', 'e8'), ('w', 'P', 'f5'), ('b', 'R', 'e5'), ('b', 'B', 'f4'), ('w', 'K', 'f3'), ('w', 'B', 'c3')]",0,3,insufficient_material
+49,iddfs,mcts,1,3,"[('w', 'K', 'c6'), ('b', 'K', 'g3'), ('b', 'Q', 'f1'), ('b', 'B', 'a1')]",0,100,move_limit
+50,iddfs,mcts,3,1,"[('w', 'K', 'd7'), ('w', 'B', 'f4'), ('w', 'P', 'h3'), ('b', 'K', 'd2')]",0,32,threefold
+"
+--- MATCH COMPLETE ---"
+iddfs (White) wins: 25
+mcts (Black) wins: 3
+Draws: 22
+Average game length: 35.9 moves
+Draw breakdown:
+move_limit: 5
+insufficient_material: 12
+stalemate: 1
+threefold: 4
+fifty_move: 0
+other: 0
