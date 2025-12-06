@@ -12,55 +12,42 @@ SEARCH_FUNCS = {
 }
 
 
-def play_single_game(white_algo: str, black_algo: str, max_moves=100):
+def play_single_game(white_algo: str, black_algo: str, max_moves: int = 100):
     """
-    Plays one AI-vs-AI game and returns:
-        result       ->  1 (white win), 0 (draw), -1 (black win)
-        white_count  ->  number of white pieces at start
-        black_count  ->  number of black pieces at start
-        pieces       ->  initial piece list (color, type, square)
-        moves        ->  number of plies played
-        draw_reason  ->  None for decisive games, string label for draws
-                         ('move_limit', 'insufficient_material',
-                          'stalemate', 'threefold', 'fifty_move', 'other')
-    """
+    Play a single AI-vs-AI game and return:
+    (result, white_count, black_count, pieces, moves, draw_reason).
 
+    result: 1 (white win), 0 (draw), -1 (black win)
+    draw_reason: one of None, 'move_limit', 'insufficient_material',
+                 'stalemate', 'threefold', 'fifty_move', 'other'
+    """
     engine = ChessEngine()
     engine.reset_to_endgame_position()
 
     white_count, black_count = engine.count_pieces()
     pieces = engine.get_piece_list()
-
     move_counter = 0
 
-    # ----------------------------------
-    # PLAY GAME
-    # ----------------------------------
     while not engine.is_game_over() and move_counter < max_moves:
         if engine.board.turn == chess.WHITE:
             SEARCH_FUNCS[white_algo](engine)
         else:
             SEARCH_FUNCS[black_algo](engine)
-
         move_counter += 1
 
-    # ----------------------------------
-    # RESULT HANDLING
-    # ----------------------------------
-
-    # CHECKMATE = decisive
+    # Checkmate: decisive game
     if engine.board.is_checkmate():
         winner = "WHITE" if engine.board.turn == chess.BLACK else "BLACK"
         print(f"Checkmate! Winner: {winner}, moves: {move_counter}")
         result = 1 if engine.board.turn == chess.BLACK else -1
         return result, white_count, black_count, pieces, move_counter, None
 
-    # MOVE LIMIT = forced draw by our tournament rules
+    # Draw by move limit (custom rule)
     if move_counter >= max_moves and not engine.board.is_game_over():
         print(f"Draw by move limit ({max_moves} plies), moves: {move_counter}")
         return 0, white_count, black_count, pieces, move_counter, "move_limit"
 
-    # OTHER DRAW TYPES (true chess rules)
+    # Draw by standard rules
     if engine.board.is_stalemate():
         print(f"Draw by stalemate, moves: {move_counter}")
         draw_reason = "stalemate"
@@ -80,12 +67,13 @@ def play_single_game(white_algo: str, black_algo: str, max_moves=100):
     return 0, white_count, black_count, pieces, move_counter, draw_reason
 
 
-def run_matchup(white_algo, black_algo="random", games=100, log_file="results.csv"):
+def run_matchup(white_algo: str, black_algo: str = "random", games: int = 100, log_file: str = "results.csv"):
     """
-    Runs many games between two agents.
-    Saves results to a CSV for later analysis.
-    """
+    Run multiple games between two algorithms and write results to a CSV file.
 
+    Returns a summary dictionary with win/draw counts, average moves,
+    and draw reason counts.
+    """
     print(f"Running {games} games: {white_algo} (white) vs {black_algo} (black)")
 
     white_wins = 0
@@ -93,7 +81,6 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
     draws = 0
     total_moves = 0
 
-    # draw reason counters
     draw_move_limit = 0
     draw_insufficient = 0
     draw_stalemate = 0
@@ -101,7 +88,6 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
     draw_fifty = 0
     draw_other = 0
 
-    # CSV setup
     with open(log_file, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -117,12 +103,14 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
         ])
 
         for g in range(1, games + 1):
-            (result,
-             white_count,
-             black_count,
-             pieces,
-             moves,
-             draw_reason) = play_single_game(white_algo, black_algo)
+            (
+                result,
+                white_count,
+                black_count,
+                pieces,
+                moves,
+                draw_reason,
+            ) = play_single_game(white_algo, black_algo)
 
             total_moves += moves
 
@@ -132,7 +120,6 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
                 black_wins += 1
             else:
                 draws += 1
-                # count draw reasons
                 if draw_reason == "move_limit":
                     draw_move_limit += 1
                 elif draw_reason == "insufficient_material":
@@ -164,7 +151,6 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
                 f"\npieces = {pieces}\n "
             )
 
-        # summary rows for CSV
         writer.writerow(["\n--- MATCH COMPLETE ---"])
         writer.writerow([f"{white_algo} (White) wins: {white_wins}"])
         writer.writerow([f"{black_algo} (Black) wins: {black_wins}"])
@@ -178,7 +164,6 @@ def run_matchup(white_algo, black_algo="random", games=100, log_file="results.cs
         writer.writerow([f"fifty_move: {draw_fifty}"])
         writer.writerow([f"other: {draw_other}"])
 
-    # console summary
     print("\n--- MATCH COMPLETE ---")
     print(f"{white_algo} (White) wins: {white_wins}")
     print(f"{black_algo} (Black) wins: {black_wins}")

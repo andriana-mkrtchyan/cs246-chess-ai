@@ -10,8 +10,7 @@ plt.rcParams["figure.figsize"] = (9, 5)
 
 
 def save_fig(name: str):
-    """Save current figure as PNG in charts/ and close."""
-
+    """Save the current figure as a PNG in charts/ and close it."""
     os.makedirs("charts", exist_ok=True)
     plt.tight_layout()
     plt.savefig(os.path.join("charts", f"{name}.png"), dpi=220)
@@ -19,7 +18,7 @@ def save_fig(name: str):
 
 
 def load_tests() -> pd.DataFrame:
-    """Load all CSVs from tests/ and normalize columns."""
+    """Load all CSV files from tests/ and return a cleaned combined DataFrame."""
     files = glob.glob("tests/*.csv")
     if not files:
         raise FileNotFoundError("No CSV files found in tests/ folder.")
@@ -33,22 +32,17 @@ def load_tests() -> pd.DataFrame:
             print(f"Skipping {path} due to read error: {e}")
             continue
 
-        # normalize column names: lower + remove spaces
         raw.columns = [c.strip().lower().replace(" ", "") for c in raw.columns]
 
-        # ensure optional columns exist
         if "drawreason" not in raw.columns:
             raw["drawreason"] = np.nan
         if "startfen" not in raw.columns:
             raw["startfen"] = np.nan
 
-        # basic required columns check
         required = {"game", "whitealgo", "blackalgo", "result", "moves"}
         if not required.issubset(set(raw.columns)):
-            print(f"Skipping {path}: missing required columns {required - set(raw.columns)}")
             continue
 
-        # scenario from filename
         fname = os.path.basename(path)
         scenario = "random" if fname.startswith("rdb_") else "fixed"
         raw["scenario"] = scenario
@@ -60,38 +54,35 @@ def load_tests() -> pd.DataFrame:
         raise RuntimeError("No valid CSVs after filtering.")
 
     df = pd.concat(dfs, ignore_index=True)
-
-    # keep only rows with valid algo names (alphabetic; drop garbage lines)
     df = df.dropna(subset=["whitealgo", "blackalgo"])
+
     mask_valid = df["whitealgo"].astype(str).str.isalpha() & df["blackalgo"].astype(str).str.isalpha()
     df = df[mask_valid].copy()
 
-    # numeric conversion
     df["result"] = pd.to_numeric(df["result"], errors="coerce")
     df["moves"] = pd.to_numeric(df["moves"], errors="coerce")
     df = df.dropna(subset=["result", "moves"])
 
-    # derive winner / loser / outcome / winner color
     df["winneralgo"] = np.where(
-        df["result"] == 1,
-        df["whitealgo"],
-        np.where(df["result"] == -1, df["blackalgo"], np.nan),
+        df["result"] == 1, df["whitealgo"],
+        np.where(df["result"] == -1, df["blackalgo"], np.nan)
     )
     df["loseralgo"] = np.where(
-        df["result"] == 1,
-        df["blackalgo"],
-        np.where(df["result"] == -1, df["whitealgo"], np.nan),
+        df["result"] == 1, df["blackalgo"],
+        np.where(df["result"] == -1, df["whitealgo"], np.nan)
     )
+
     df["winnercolor"] = None
     df.loc[df["result"] == 1, "winnercolor"] = "White"
     df.loc[df["result"] == -1, "winnercolor"] = "Black"
+
     df["outcome"] = df["result"].map({1: "Win", 0: "Draw", -1: "Loss"})
 
     return df
 
 
 def add_stacked_labels(ax):
-    """Add percentage labels inside stacked bars."""
+    """Add percentage labels inside stacked bar segments."""
     for p in ax.patches:
         height = p.get_height()
         if height <= 0:
@@ -102,24 +93,18 @@ def add_stacked_labels(ax):
 
 
 def analyze(df: pd.DataFrame):
-    # --------------------------------------------------
-    # 1. Algorithm performance on random vs fixed
-    # --------------------------------------------------
-    print("\n[1] Algorithm performance on random vs fixed")
+    """Run all statistical analyses and generate plots from the dataset."""
 
-    # wins / losses / draws per (scenario, algo)
+    # 1. Algorithm performance on random vs fixed scenarios
     wins = df.dropna(subset=["winneralgo"]).groupby(["scenario", "winneralgo"]).size().rename("Win")
-
     losses = df.dropna(subset=["loseralgo"]).groupby(["scenario", "loseralgo"]).size().rename("Loss")
 
     draw_rows = df[df["result"] == 0]
     if not draw_rows.empty:
-        draw_long = pd.DataFrame(
-            {
-                "scenario": pd.concat([draw_rows["scenario"], draw_rows["scenario"]]),
-                "algo": pd.concat([draw_rows["whitealgo"], draw_rows["blackalgo"]]),
-            }
-        )
+        draw_long = pd.DataFrame({
+            "scenario": pd.concat([draw_rows["scenario"], draw_rows["scenario"]]),
+            "algo": pd.concat([draw_rows["whitealgo"], draw_rows["blackalgo"]]),
+        })
         draws = draw_long.groupby(["scenario", "algo"]).size().rename("Draw")
     else:
         draws = pd.Series(dtype=float)
@@ -136,131 +121,76 @@ def analyze(df: pd.DataFrame):
 
     perf_pct = perf_counts.div(perf_counts.sum(axis=1).replace(0, np.nan), axis=0) * 100
 
-    # one stacked bar chart per scenario
     for sc in scenarios:
         sub = perf_pct.xs(sc).dropna(how="all")
-        if sub.empty:
-            print(f"  - Skipping scenario {sc}: no data")
-            continue
+        if not sub.empty:
+            ax = sub.plot(kind="bar", stacked=True)
+            ax.set_title(f"Algorithm Performance on {sc.capitalize()} Boards (%)")
+            ax.set_ylabel("Percentage (%)")
+            add_stacked_labels(ax)
+            save_fig(f"algo_performance_{sc}")
 
-        ax = sub.plot(kind="bar", stacked=True)
-        ax.set_title(f"Algorithm Performance on {sc.capitalize()} Boards (%)")
-        ax.set_ylabel("Percentage (%)")
-        add_stacked_labels(ax)
-        save_fig(f"1_algo_perf_{sc}")
-
-    # --------------------------------------------------
-    # 2. Inter-algo comparison (head-to-head matrix)
-    # --------------------------------------------------
-    print("\n[2] Inter-algorithm head-to-head comparison")
-
+    # 2. Head-to-head algorithm comparison
     df_hh = df.dropna(subset=["winneralgo", "loseralgo"])
-    if df_hh.empty:
-        print("  - No head-to-head data available.")
-    else:
+    if not df_hh.empty:
         hh = df_hh.groupby(["winneralgo", "loseralgo"]).size().unstack(fill_value=0)
         plt.figure(figsize=(8, 6))
         sns.heatmap(hh, annot=True, fmt="d", cmap="Blues")
-        plt.title("Head-to-Head: Wins (Row algo beats Column algo)")
-        save_fig("2_head_to_head_matrix")
+        plt.title("Head-to-Head Win Matrix")
+        save_fig("head_to_head_matrix")
 
-    # --------------------------------------------------
-    # 3. Draw behaviour comparison
-    # --------------------------------------------------
-    print("\n[3] Draw behaviour comparison")
-
+    # 3. Draw behaviour analysis
     draws_df = df[df["result"] == 0].copy()
-    if draws_df.empty:
-        print("  - No draws to analyze.")
-    else:
+    if not draws_df.empty:
         draws_df["drawreason_norm"] = draws_df["drawreason"].fillna("Unknown")
-        draw_stats = (
-            draws_df.groupby(["scenario", "drawreason_norm"]).size().unstack(fill_value=0)
-        )
+        draw_stats = draws_df.groupby(["scenario", "drawreason_norm"]).size().unstack(fill_value=0)
         draw_stats_pct = draw_stats.div(draw_stats.sum(axis=1), axis=0) * 100
 
         ax = draw_stats_pct.plot(kind="bar", stacked=True)
         ax.set_title("Draw Reasons by Scenario (%)")
         ax.set_ylabel("Percentage (%)")
         add_stacked_labels(ax)
-        save_fig("3_draw_behavior")
+        save_fig("draw_reasons")
 
-    # --------------------------------------------------
-    # 4. Cross-scenario correlation (algorithm strength)
-    # --------------------------------------------------
-    print("\n[4] Cross-scenario correlation of win rates")
-
-    # win rate = wins / total games where algo participates
-    games_long = df.melt(
-        id_vars=["scenario", "game"],
-        value_vars=["whitealgo", "blackalgo"],
-        value_name="algo"
-    )
+    # 4. Cross-scenario win-rate correlation
+    games_long = df.melt(id_vars=["scenario", "game"], value_vars=["whitealgo", "blackalgo"], value_name="algo")
     games_counts = games_long.groupby(["scenario", "algo"])["game"].nunique()
-
     wins_counts = wins.copy()
     win_rate = (wins_counts / games_counts).unstack("scenario")
 
-    if win_rate is None or win_rate.empty or win_rate.shape[1] < 2:
-        print("  - Not enough data (both random and fixed) for correlation.")
-    else:
-        # ensure both columns exist
-        cols = [c for c in ["random", "fixed"] if c in win_rate.columns]
-        if len(cols) < 2:
-            print("  - Need both random and fixed win rates for correlation.")
-        else:
-            wr = win_rate[cols].dropna()
-            if wr.empty:
-                print("  - No overlapping algorithms between scenarios.")
-            else:
-                corr_val = wr[cols[0]].corr(wr[cols[1]])
-                # simple value card + scatter
-                plt.figure()
-                plt.text(
-                    0.5,
-                    0.5,
-                    f"Correlation of Win Rates\n{cols[0].capitalize()} vs {cols[1].capitalize()}:\n\n{corr_val:.3f}",
-                    ha="center",
-                    va="center",
-                    fontsize=14,
-                )
-                plt.axis("off")
-                save_fig("4_cross_scenario_corr_card")
+    if win_rate is not None and not win_rate.empty and {"random", "fixed"}.issubset(win_rate.columns):
+        wr = win_rate[["random", "fixed"]].dropna()
 
-                plt.figure()
-                plt.scatter(wr[cols[0]], wr[cols[1]])
-                maxv = float(max(wr[cols[0]].max(), wr[cols[1]].max()))
-                plt.plot([0, maxv], [0, maxv], "r--", linewidth=1)
-                plt.xlabel(f"{cols[0].capitalize()} win rate")
-                plt.ylabel(f"{cols[1].capitalize()} win rate")
-                plt.title("Cross-Scenario Win Rate Correlation")
-                save_fig("4_cross_scenario_corr_scatter")
+        if not wr.empty:
+            corr_val = wr["random"].corr(wr["fixed"])
 
-    # --------------------------------------------------
-    # 5. Average move count (per scenario)
-    # --------------------------------------------------
-    print("\n[5] Average move count per scenario")
+            plt.figure()
+            plt.text(0.5, 0.5, f"Correlation of Win Rates\n\n{corr_val:.3f}", ha="center", va="center", fontsize=14)
+            plt.axis("off")
+            save_fig("cross_scenario_correlation")
 
+            plt.figure()
+            plt.scatter(wr["random"], wr["fixed"])
+            maxv = float(max(wr["random"].max(), wr["fixed"].max()))
+            plt.plot([0, maxv], [0, maxv], "r--", linewidth=1)
+            plt.xlabel("Random win rate")
+            plt.ylabel("Fixed win rate")
+            plt.title("Cross-Scenario Win Rate Correlation")
+            save_fig("cross_scenario_scatter")
+
+    # 5. Average game length per scenario
     moves_avg = df.groupby("scenario")["moves"].mean()
     ax = moves_avg.plot(kind="bar")
     ax.set_title("Average Game Length per Scenario")
     ax.set_ylabel("Average Moves")
     for i, v in enumerate(moves_avg):
         ax.text(i, v + 0.3, f"{v:.1f}", ha="center", fontsize=9)
-    save_fig("5_avg_moves_scenario")
+    save_fig("average_moves")
 
-    # --------------------------------------------------
-    # 6. Symmetry test: per-algorithm color bias (FIXED)
-    # --------------------------------------------------
-    print("\n[6] Symmetry test (per-algorithm color bias on fixed boards)")
-
+    # 6. Color performance symmetry on fixed boards
     df_fixed = df[df["scenario"] == "fixed"].copy()
-    if df_fixed.empty:
-        print("  - No fixed-board data, skipping symmetry test.")
-    else:
-        algos_fixed = sorted(
-            pd.unique(pd.concat([df_fixed["whitealgo"], df_fixed["blackalgo"]]))
-        )
+    if not df_fixed.empty:
+        algos_fixed = sorted(pd.unique(pd.concat([df_fixed["whitealgo"], df_fixed["blackalgo"]])))
 
         rows = []
         for a in algos_fixed:
@@ -276,46 +206,29 @@ def analyze(df: pd.DataFrame):
             white_win_rate = 100 * white_wins / white_total if white_total > 0 else np.nan
             black_win_rate = 100 * black_wins / black_total if black_total > 0 else np.nan
 
-            rows.append(
-                {
-                    "algo": a,
-                    "WhiteWin%": white_win_rate,
-                    "BlackWin%": black_win_rate,
-                    "Delta": white_win_rate - black_win_rate,
-                }
-            )
+            rows.append({
+                "algo": a,
+                "WhiteWin%": white_win_rate,
+                "BlackWin%": black_win_rate,
+                "Delta": white_win_rate - black_win_rate,
+            })
 
         sym_df = pd.DataFrame(rows).set_index("algo")
-        print(sym_df)  # optional, nice to see in console
 
         ax = sym_df[["WhiteWin%", "BlackWin%"]].plot(kind="bar")
         ax.set_ylabel("Win rate (%)")
-        ax.set_title("Per-Algorithm Color Symmetry on Fixed Boards")
+        ax.set_title("Color Performance Symmetry on Fixed Boards")
 
-        # value labels
         for p in ax.patches:
             height = p.get_height()
             if not np.isnan(height):
-                ax.text(
-                    p.get_x() + p.get_width() / 2,
-                    height + 0.5,
-                    f"{height:.1f}%",
-                    ha="center",
-                    va="bottom",
-                    fontsize=8,
-                )
+                ax.text(p.get_x() + p.get_width() / 2, height + 0.5, f"{height:.1f}%", ha="center", fontsize=8)
 
-        save_fig("6_symmetry_per_algo_fixed")
+        save_fig("color_symmetry_fixed")
 
-    # --------------------------------------------------
-    # 7. Colour advantage analysis (does first move matter?)
-    # --------------------------------------------------
-    print("\n[7] Colour advantage analysis")
-
+    # 7. Color advantage (White vs Black wins)
     wins_only = df[df["winnercolor"].notna()]
-    if wins_only.empty:
-        print("  - No decisive games to analyze color advantage.")
-    else:
+    if not wins_only.empty:
         color_stats = wins_only.groupby(["scenario", "winnercolor"]).size().unstack(fill_value=0)
         color_pct = color_stats.div(color_stats.sum(axis=1), axis=0) * 100
 
@@ -323,77 +236,9 @@ def analyze(df: pd.DataFrame):
         ax.set_title("Winning Color Distribution by Scenario (%)")
         ax.set_ylabel("Percentage of Wins (%)")
         add_stacked_labels(ax)
-        save_fig("7_color_advantage")
+        save_fig("color_advantage")
 
-    # --------------------------------------------------
-    # 2b. Corrected: Clustered bar chart (Fixed vs Random per Outcome)
-    # --------------------------------------------------
-    print("\n[2b] Correct Clustered Comparison (Fixed vs Random per Outcome)")
-
-    # perf_pct index = (scenario, algo)
-    # columns = Win, Draw, Loss
-
-    cluster = perf_pct.reset_index()  # cols: scenario, algo, Win, Draw, Loss
-
-    # Melt into long form: but keep outcome structure
-    cluster_long = cluster.melt(
-        id_vars=["scenario", "algo"],
-        value_vars=["Win", "Draw", "Loss"],
-        var_name="Outcome",
-        value_name="Percentage"
-    )
-
-    plt.figure(figsize=(12, 6))
-
-    ax = sns.barplot(
-        data=cluster_long,
-        x="Outcome",
-        y="Percentage",
-        hue="scenario",
-        ci=None,
-        palette="Set2",
-        dodge=True,
-    )
-
-    # Facet per algorithm → one row per algorithm
-    g = sns.catplot(
-        data=cluster_long,
-        x="Outcome",
-        y="Percentage",
-        hue="scenario",
-        col="algo",
-        kind="bar",
-        col_wrap=3,
-        height=4,
-        palette="Set2",
-        ci=None
-    )
-
-    # Add labels to bars
-    for ax in g.axes:
-        for p in ax.patches:
-            height = p.get_height()
-            if not np.isnan(height):
-                ax.text(
-                    p.get_x() + p.get_width() / 2,
-                    height + 1,
-                    f"{height:.1f}%",
-                    ha="center",
-                    va="bottom",
-                    fontsize=8
-                )
-
-    g.fig.suptitle("Algorithm Performance: Fixed vs Random (Clustered by Outcome)", y=1.05)
-
-    save_fig("2b_clustered_fixed_vs_random")
-    plt.close()
-
-    # --------------------------------------------------
-    # X. Algorithm Win Distribution (Pie Chart)
-    # --------------------------------------------------
-    print("\n[X] Algorithm Win Distribution (Pie Chart)")
-
-    # Count algorithm wins (as White or Black)
+    # 8. Algorithm win distribution (pie chart)
     wins_all = (
         df.dropna(subset=["winneralgo"])
         .groupby("winneralgo")
@@ -409,8 +254,8 @@ def analyze(df: pd.DataFrame):
         startangle=90,
         counterclock=False,
     )
-    plt.title("Distribution of Wins Across All Algorithms")
-    save_fig("X_algorithm_win_distribution")
+    plt.title("Distribution of Wins Across Algorithms")
+    save_fig("algorithm_win_distribution")
     plt.close()
 
 
