@@ -226,57 +226,162 @@ def run_matchup_fixed(
     }
 
 
-#Quick timing benchmark for minimax vs alpha-beta on fixed FENs
-def compare_minimax_vs_alphabeta(fen_file: str, samples: int = 50):
-    """
-    Compare average time per move of minimax vs alpha-beta on fixed positions.
+import time
+import csv
 
-    For each FEN, runs one move search with minimax and one with alpha-beta,
-    then reports total and average time for each algorithm.
+def compare_search_times(
+    algo1: str,
+    algo2: str,
+    fen_file: str,
+    samples: int = 50,
+    log_file: str = "search_timing_log.csv"
+):
     """
+    Compare the average time per move of any two search algorithms.
+
+    algo1, algo2: names of algorithms from SEARCH_FUNCS
+    fen_file:     CSV containing starting FENs
+    samples:      number of timing tests to run
+    log_file:     CSV file where timing results will be saved
+    """
+
     fens = load_fens_from_csv(fen_file)
     if not fens:
         raise ValueError(f"No FENs loaded from {fen_file}")
 
-    total_minimax_time = 0.0
-    total_alphabeta_time = 0.0
-    minimax_calls = 0
-    alphabeta_calls = 0
+    total_time_1 = 0.0
+    total_time_2 = 0.0
+    calls_1 = 0
+    calls_2 = 0
 
-    for i in range(samples):
-        fen = fens[i % len(fens)]
+    # open CSV
+    with open(log_file, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Index", "FEN", algo1 + "_time", algo2 + "_time"])
 
-        # minimax timing
-        engine_min = ChessEngine()
-        engine_min.load_fen(fen)
-        start = time.perf_counter()
-        SEARCH_FUNCS["minimax"](engine_min)
-        total_minimax_time += time.perf_counter() - start
-        minimax_calls += 1
+        for i in range(samples):
+            fen = fens[i % len(fens)]
 
-        # alpha-beta timing
-        engine_ab = ChessEngine()
-        engine_ab.load_fen(fen)
-        start = time.perf_counter()
-        SEARCH_FUNCS["alphabeta"](engine_ab)
-        total_alphabeta_time += time.perf_counter() - start
-        alphabeta_calls += 1
+            # algo1 timing
+            engine1 = ChessEngine()
+            engine1.load_fen(fen)
+            start = time.perf_counter()
+            SEARCH_FUNCS[algo1](engine1)
+            t1 = time.perf_counter() - start
+            total_time_1 += t1
+            calls_1 += 1
 
-    avg_minimax = total_minimax_time / minimax_calls if minimax_calls else 0.0
-    avg_alphabeta = total_alphabeta_time / alphabeta_calls if alphabeta_calls else 0.0
+            # algo2 timing
+            engine2 = ChessEngine()
+            engine2.load_fen(fen)
+            start = time.perf_counter()
+            SEARCH_FUNCS[algo2](engine2)
+            t2 = time.perf_counter() - start
+            total_time_2 += t2
+            calls_2 += 1
 
-    print("\n--- Search time comparison on fixed positions ---")
+            # write row
+            writer.writerow([i + 1, fen, f"{t1:.6f}", f"{t2:.6f}"])
+
+    avg1 = total_time_1 / calls_1 if calls_1 else 0.0
+    avg2 = total_time_2 / calls_2 if calls_2 else 0.0
+
+    print("\n--- Search time comparison ---")
+    print(f"Algorithms: {algo1} vs {algo2}")
     print(f"Samples: {samples}")
-    print(f"Minimax:   total {total_minimax_time:.4f}s, avg {avg_minimax:.6f}s per move")
-    print(f"AlphaBeta: total {total_alphabeta_time:.4f}s, avg {avg_alphabeta:.6f}s per move")
+    print(f"{algo1}: total {total_time_1:.4f}s, avg {avg1:.6f}s per move")
+    print(f"{algo2}: total {total_time_2:.4f}s, avg {avg2:.6f}s per move")
+    print(f"Log saved to: {log_file}")
 
     return {
+        "algo1": algo1,
+        "algo2": algo2,
         "samples": samples,
-        "minimax_total": total_minimax_time,
-        "alphabeta_total": total_alphabeta_time,
-        "minimax_avg": avg_minimax,
-        "alphabeta_avg": avg_alphabeta,
+        "algo1_total": total_time_1,
+        "algo2_total": total_time_2,
+        "algo1_avg": avg1,
+        "algo2_avg": avg2,
+        "log_file": log_file,
     }
+
+import time
+import csv
+
+
+def compare_all_algorithms_search_time(
+    algos,
+    fen_file: str,
+    samples: int = 50,
+    log_file: str = "search_timing_all_algos.csv",
+):
+    """
+    Search-time benchmark on fixed positions.
+
+    For each FEN, calls each algorithm exactly once (one move search)
+    and measures how long the search takes. Prints total and average
+    time per move for each algorithm and saves raw timings to CSV.
+    """
+    # validate algorithms
+    for a in algos:
+        if a not in SEARCH_FUNCS:
+            raise ValueError(f"Unknown algorithm: {a}")
+
+    fens = load_fens_from_csv(fen_file)
+    if not fens:
+        raise ValueError(f"No FENs loaded from {fen_file}")
+
+    total_time = {a: 0.0 for a in algos}
+    calls = {a: 0 for a in algos}
+
+    # CSV with per-position timings
+    with open(log_file, "w", newline="") as f:
+        writer = csv.writer(f)
+        header = ["Index", "FEN"] + [f"{a}_time" for a in algos]
+        writer.writerow(header)
+
+        for i in range(samples):
+            fen = fens[i % len(fens)]
+            row_times = []
+
+            for a in algos:
+                engine = ChessEngine()
+                engine.load_fen(fen)
+
+                start = time.perf_counter()
+                SEARCH_FUNCS[a](engine)   # full engine logic (like test 1)
+                dt = time.perf_counter() - start
+
+                total_time[a] += dt
+                calls[a] += 1
+                row_times.append(f"{dt:.6f}")
+
+            writer.writerow([i + 1, fen] + row_times)
+
+    # print summary in "test 1" style
+    print("\n--- Search time comparison (all algorithms) ---")
+    print(f"Samples per algorithm: {samples}")
+    print(f"Log saved to: {log_file}")
+
+    stats = {}
+    for a in algos:
+        avg = total_time[a] / calls[a] if calls[a] else 0.0
+        stats[a] = {
+            "total_time": total_time[a],
+            "calls": calls[a],
+            "avg_time_per_move": avg,
+        }
+        print(f"{a}: total {total_time[a]:.4f}s, avg {avg:.6f}s per move")
+
+    return stats
+
+
+if __name__ == "__main__":
+    compare_all_algorithms_search_time(
+        algos=["minimax", "alphabeta", "iddfs", "mcts", "random"],
+        fen_file="endgame_positions.csv",
+        samples=50,
+        log_file="search_timing_all_algos01 .csv",
+    )
 
 
 # if __name__ == "__main__":
@@ -288,8 +393,14 @@ def compare_minimax_vs_alphabeta(fen_file: str, samples: int = 50):
 #         fen_file="endgame_positions.csv",
 #     )
 
-if __name__ == "__main__":
-    compare_minimax_vs_alphabeta(
-        fen_file="endgame_positions.csv",
-        samples=50
-    )
+# if __name__ == "__main__":
+#     compare_search_times(
+#         algo1="alphabeta",
+#         algo2="mcts",
+#         fen_file="endgame_positions.csv",
+#         samples=30,
+#         log_file="timing_alphabeta_vs_mcts.csv"
+#     )
+
+
+
