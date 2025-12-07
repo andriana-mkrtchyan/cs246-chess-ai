@@ -384,15 +384,9 @@ if __name__ == "__main__":
     )
 
 
-# if __name__ == "__main__":
-#     run_matchup_fixed(
-#         "iddfs",
-#         "alphabeta",
-#         games=50,
-#         log_file="fixed_iddfs_ab.csv",
-#         fen_file="endgame_positions.csv",
-#     )
 
+
+<<<<<<< HEAD
 # if __name__ == "__main__":
 #     compare_search_times(
 #         algo1="alphabeta",
@@ -404,3 +398,22 @@ if __name__ == "__main__":
 
 
 
+=======
+if __name__ == "__main__":
+    run_matchup_fixed(
+        "iddfs",
+        "alphabeta",
+        games=50,
+        log_file="fixed_iddfs_ab.csv",
+        fen_file="endgame_positions.csv",
+    )
+
+# if __name__ == "__main__":
+#     compare_search_times(
+#         algo1="minimax",
+#         algo2="random",
+#         fen_file="endgame_positions.csv",
+#         samples=50,
+#         log_file="timing___minmaxdept5_vs_random.csv"
+#     )
+>>>>>>> 2b17c51 (new ui and working program)
