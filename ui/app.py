@@ -1,20 +1,21 @@
 import tkinter as tk
 from tkinter import ttk
 
-from config.constants import  THEMES, PIECE_SETS
-from engine.chess_engine import  ChessEngine
+from config.constants import THEMES, PIECE_SETS
+from engine.chess_engine import ChessEngine
 from ui.gui import ChessGUI
-
-# --- MAIN APP: START MENU + GAME -------------------------------------------
 
 
 class ChessApp:
-    def __init__(self, root):
+    """Top-level application window with start menu and game launcher."""
+
+    def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Endgame Chess – AI Project")
         self.root.geometry("1100x720")
         self.root.minsize(1000, 680)
 
+        # basic ttk styling
         self.style = ttk.Style()
         try:
             self.style.theme_use("clam")
@@ -22,21 +23,25 @@ class ChessApp:
             pass
         self.style.configure("Main.TFrame", background="#F5F5F5")
 
-        self.start_frame = None
-        self.game_gui = None
+        self.start_frame: ttk.Frame | None = None
+        self.game_gui: ChessGUI | None = None
 
         self._show_start_menu()
 
-    # ---------- START MENU --------------------------------------------------
+    # ---------------------------------------------------------------------
+    # Start menu
+    # ---------------------------------------------------------------------
 
     def _show_start_menu(self):
+        """Show the start menu with time/theme/piece selection."""
         if self.game_gui:
             self.game_gui.destroy()
+            self.game_gui = None
 
         self.start_frame = ttk.Frame(self.root, style="Main.TFrame")
         self.start_frame.pack(fill="both", expand=True, padx=40, pady=40)
 
-        # Title
+        # title
         title = ttk.Label(
             self.start_frame,
             text="Endgame Chess",
@@ -54,11 +59,11 @@ class ChessApp:
         )
         subtitle.pack(pady=(0, 20))
 
-        # Settings frame
+        # settings container
         settings = ttk.Frame(self.start_frame, style="Main.TFrame")
         settings.pack(pady=10)
 
-        # Time control
+        # time control
         time_row = ttk.Frame(settings, style="Main.TFrame")
         time_row.grid(row=0, column=0, sticky="w", pady=5)
         ttk.Label(
@@ -67,6 +72,8 @@ class ChessApp:
             font=("Segoe UI", 11),
             background="#F5F5F5",
         ).pack(side="left")
+
+        # default 5 minutes per side; ChessGUI uses the same value for both players
         self.time_var = tk.StringVar(value="5")
         ttk.Spinbox(
             time_row,
@@ -76,7 +83,7 @@ class ChessApp:
             width=5,
         ).pack(side="left", padx=(8, 0))
 
-        # Theme selection
+        # board theme
         theme_row = ttk.Frame(settings, style="Main.TFrame")
         theme_row.grid(row=1, column=0, sticky="w", pady=5)
         ttk.Label(
@@ -85,6 +92,7 @@ class ChessApp:
             font=("Segoe UI", 11),
             background="#F5F5F5",
         ).pack(side="left")
+
         self.theme_var = tk.StringVar(value="Classic")
         ttk.Combobox(
             theme_row,
@@ -94,7 +102,7 @@ class ChessApp:
             width=10,
         ).pack(side="left", padx=(8, 0))
 
-        # Piece set selection
+        # piece style
         piece_row = ttk.Frame(settings, style="Main.TFrame")
         piece_row.grid(row=2, column=0, sticky="w", pady=5)
         ttk.Label(
@@ -103,6 +111,7 @@ class ChessApp:
             font=("Segoe UI", 11),
             background="#F5F5F5",
         ).pack(side="left")
+
         self.piece_set_var = tk.StringVar(value="Unicode")
         ttk.Combobox(
             piece_row,
@@ -112,7 +121,7 @@ class ChessApp:
             width=10,
         ).pack(side="left", padx=(8, 0))
 
-        # Buttons: modes
+        # mode buttons
         btn_frame = ttk.Frame(self.start_frame, style="Main.TFrame")
         btn_frame.pack(pady=30)
 
@@ -134,8 +143,10 @@ class ChessApp:
 
         info = ttk.Label(
             self.start_frame,
-            text="Endgame mode: special setups for KQ vs K etc.\n"
-                 "AI search (minimax / alpha-beta / MCTS) will be plugged into the engine.",
+            text=(
+                "Endgame mode: special low-material setups.\n"
+                "AI search (minimax / alpha-beta / MCTS) runs through the engine."
+            ),
             font=("Segoe UI", 9),
             foreground="#777777",
             background="#F5F5F5",
@@ -143,8 +154,13 @@ class ChessApp:
         )
         info.pack(pady=(10, 0))
 
+    # ---------------------------------------------------------------------
+    # Launch game window
+    # ---------------------------------------------------------------------
+
     def _start_game(self, mode: str):
-        # parse time
+        """Start a new game in the selected mode with the chosen settings."""
+        # parse time from spinbox (minutes per side)
         try:
             minutes = int(self.time_var.get())
             if minutes <= 0:
@@ -152,20 +168,22 @@ class ChessApp:
         except ValueError:
             minutes = 5
 
+        # validate theme
         theme = self.theme_var.get()
         if theme not in THEMES:
             theme = "Classic"
 
+        # validate piece set
         piece_set_name = self.piece_set_var.get()
         if piece_set_name not in PIECE_SETS:
             piece_set_name = "Unicode"
 
-        # remove menu
-        if self.start_frame:
+        # remove start menu
+        if self.start_frame is not None:
             self.start_frame.destroy()
             self.start_frame = None
 
-        # launch game GUI
+        # launch board GUI; both human and AI use the same initial_minutes
         self.game_gui = ChessGUI(
             self.root,
             initial_minutes=minutes,

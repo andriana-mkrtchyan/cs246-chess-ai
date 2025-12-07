@@ -2,14 +2,12 @@ import chess
 from config.constants import PIECE_VALUES
 
 
-# Phase detection based on remaining major pieces
 def game_phase(board: chess.Board):
     """Return the current game phase based on remaining major pieces."""
-    total_major = 0
-    for piece in board.piece_map().values():
-        if piece.piece_type in (chess.QUEEN, chess.ROOK):
-            total_major += 1
-
+    total_major = sum(
+        1 for p in board.piece_map().values()
+        if p.piece_type in (chess.QUEEN, chess.ROOK)
+    )
     if total_major >= 6:
         return "opening"
     elif total_major >= 3:
@@ -17,7 +15,6 @@ def game_phase(board: chess.Board):
     return "endgame"
 
 
-# Mobility: number of legal moves for a given side
 def mobility(board: chess.Board, color: chess.Color):
     """
     Return the number of legal moves available for the given side.
@@ -30,7 +27,6 @@ def mobility(board: chess.Board, color: chess.Color):
     return count
 
 
-# Pawn structure: doubled, isolated, and passed pawns
 def pawn_structure(board: chess.Board, color: chess.Color):
     """Return a pawn structure score including doubled, isolated, and passed pawns."""
     score = 0
@@ -77,7 +73,6 @@ def pawn_structure(board: chess.Board, color: chess.Color):
     return score
 
 
-# King safety depending on game phase
 def king_safety(board: chess.Board, color: chess.Color):
     """Return a king safety score based on game phase and king positioning."""
     king = board.king(color)
@@ -102,14 +97,12 @@ def king_safety(board: chess.Board, color: chess.Color):
     return -(center_distance * 0.3)
 
 
-# King opposition and distance in endgames
 def king_opposition(board: chess.Board):
     """
     Return a bonus based on king-to-king proximity in endgames.
     Applies only in simplified endgame positions.
     """
-    phase = game_phase(board)
-    if phase != "endgame":
+    if game_phase(board) != "endgame":
         return 0
 
     wk = board.king(chess.WHITE)
@@ -124,11 +117,9 @@ def king_opposition(board: chess.Board):
     return (6 - dist) * 0.2  # White positive, Black negative applied later
 
 
-# Endgame pressure: pushing the enemy king toward the edge
 def endgame_pressure(board: chess.Board):
     """Return a score encouraging edge pressure in rook/queen endgames."""
-    phase = game_phase(board)
-    if phase != "endgame":
+    if game_phase(board) != "endgame":
         return 0
 
     score = 0
@@ -156,46 +147,34 @@ def endgame_pressure(board: chess.Board):
     return score
 
 
-# Piece-square table for knights
-KNIGHT_TABLE = [
-    -0.5, -0.4, -0.3, -0.3, -0.3, -0.3, -0.4, -0.5,
-    -0.4, -0.2,  0.0,  0.0,  0.0,  0.0, -0.2, -0.4,
-    -0.3,  0.0,  0.1,  0.15, 0.15, 0.1,  0.0, -0.3,
-    -0.3,  0.0,  0.15, 0.20, 0.20, 0.15, 0.0, -0.3,
-    -0.3,  0.0,  0.15, 0.20, 0.20, 0.15, 0.0, -0.3,
-    -0.3,  0.0,  0.1,  0.15, 0.15, 0.1,  0.0, -0.3,
-    -0.4, -0.2,  0.0,  0.0,  0.0,  0.0, -0.2, -0.4,
-    -0.5, -0.4, -0.3, -0.3, -0.3, -0.3, -0.4, -0.5,
-]
-
-
-def pst_bonus(piece, square):
-    """Return knight piece-square bonus; return zero for all other pieces."""
-    if piece.piece_type == chess.KNIGHT:
-        return KNIGHT_TABLE[square]
-    return 0
-
-
-# Main evaluation function: combines all heuristics
 def evaluate_position(board: chess.Board):
     """Return a full evaluation score combining material and positional heuristics."""
+
+    # Checkmate
     if board.is_checkmate():
         return 9999 if board.turn == chess.BLACK else -9999
-    if board.is_stalemate():
+
+    # Draws: penalize drawing when clearly winning (stalemate, threefold, 50-move)
+    if board.is_stalemate() or board.can_claim_threefold_repetition() or board.can_claim_fifty_moves():
+        material = 0
+        for piece in board.piece_map().values():
+            mat_val = PIECE_VALUES[piece.symbol().upper()]
+            material += mat_val if piece.color == chess.WHITE else -mat_val
+
+        # If one side is clearly ahead, treat draw as bad for that side
+        if abs(material) >= 3:
+            return -material * 2
         return 0
 
     score = 0
 
     # Material
-    for sq, piece in board.piece_map().items():
+    for piece in board.piece_map().values():
         val = PIECE_VALUES[piece.symbol().upper()]
         if piece.color == chess.WHITE:
             score += val
         else:
             score -= val
-
-        # Piece-square table (currently disabled)
-        # score += pst_bonus(piece, sq) * (1 if piece.color == chess.WHITE else -1)
 
     # Mobility
     score += 0.1 * (mobility(board, chess.WHITE) - mobility(board, chess.BLACK))
@@ -208,10 +187,28 @@ def evaluate_position(board: chess.Board):
     score += king_safety(board, chess.WHITE)
     score -= king_safety(board, chess.BLACK)
 
-    # King opposition
+    # King opposition and endgame pressure
     score += king_opposition(board)
-
-    # Endgame pressure
     score += endgame_pressure(board)
+
+    # Extra endgame king activity and king distance
+    if game_phase(board) == "endgame":
+        wk = board.king(chess.WHITE)
+        bk = board.king(chess.BLACK)
+        if wk is not None and bk is not None:
+            wr, wc = chess.square_rank(wk), chess.square_file(wk)
+            br, bc = chess.square_rank(bk), chess.square_file(bk)
+
+            # Stronger king centralization
+            score += (3.5 - abs(wr - 3.5)) * 1.2
+            score -= (3.5 - abs(br - 3.5)) * 1.2
+
+            # Encourage kings getting closer (helps mating nets)
+            king_dist = abs(wr - br) + abs(wc - bc)
+            score -= king_dist * 0.8
+
+    # Small bonus for giving check (tactical pressure)
+    if board.is_check():
+        score += 0.8 if board.turn == chess.BLACK else -0.8
 
     return score

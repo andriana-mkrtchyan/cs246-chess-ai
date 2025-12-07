@@ -1,7 +1,7 @@
 import tkinter as tk
-from ui.app import ChessApp
+from ui.gui import ChessApp
 
 if __name__ == "__main__":
     root = tk.Tk()
-    ChessApp(root)
+    app = ChessApp(root)
     root.mainloop()
